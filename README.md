@@ -1,4 +1,4 @@
-# Strategy Facilitator
+# My Success Story
 
 An AI-powered goal achievement platform that helps users discover their true goals through deep conversation, commit to actionable steps, and adaptively track progress with compassionate accountability.
 
@@ -32,43 +32,10 @@ This is a **disposable prototype** deployed on Vercel to gather feedback from te
 - Supabase account
 - Anthropic API key
 
-### Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/strategy-facilitator.git
-cd strategy-facilitator
-```
-
-2. Install dependencies:
-```bash
-cd prototype
-npm install
-```
-
-3. Create `.env` file in `prototype/` directory:
-```bash
-cp .env.example .env
-```
-
-4. Add your API keys to `.env`:
-```
-ANTHROPIC_API_KEY=your_key_here
-SUPABASE_URL=your_url_here
-SUPABASE_ANON_KEY=your_key_here
-```
-
-5. Run the development server:
-```bash
-npm run dev
-```
-
-6. Open http://localhost:3000
-
 ## Project Structure
 
 ```
-Strategy Facilitator/
+MySuccessStory000/
 ├── .amazonq/rules/          # Amazon Q context files
 ├── prototype/               # Phase 0 throwaway code
 │   ├── server.js           # Express server
