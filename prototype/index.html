@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>My Success Story</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6c3fc5">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Success">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      /* ── Responsive / PWA viewport fixes — Step 1 ── */
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        overflow-y: auto; /* Ensures the main document scrolls if content overflows */
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f5f5f5;
+        height: auto;
+        display: block;
+        overflow-y: auto;
+        flex-direction: column;
+      }
+      #root {
+        height: auto;
+      }
+      header {
+        background: white;
+        padding: 16px 20px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      h1 {
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      #messages {
+        height: auto;
+        flex: 1;
+        min-height: 0;
+        overflow-y: visible;
+        overscroll-behavior: contain;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .message {
+        max-width: min(600px, 88vw);
+        padding: 12px 16px;
+        border-radius: 8px;
+        line-height: 1.5;
+      }
+
+      .message.user {
+        align-self: flex-end;
+        background: #007bff;
+        color: white;
+      }
+
+      .message.assistant {
+        align-self: flex-start;
+        background: white;
+        border: 1px solid #ddd;
+        white-space: pre-wrap;
+      }
+
+      .typing {
+        align-self: flex-start;
+        padding: 12px 16px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        color: #666;
+      }
+
+      footer {
+        flex-shrink: 0;
+        background: white;
+        padding: 16px 20px;
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+        border-top: 1px solid #ddd;
+        display: flex;
+        gap: 8px;
+      }
+
+      textarea {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 16px; /* prevents iOS auto-zoom on focus */
+        min-height: 44px;
+        resize: none;
+      }
+
+      button {
+        padding: 10px 20px;
+        min-height: 44px;
+        min-width: 44px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover:not(:disabled) {
+        background: #0056b3;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 480px) {
+        header {
+          padding: 12px 16px;
+        }
+        h1 {
+          font-size: 17px;
+        }
+        footer {
+          padding: 12px 16px;
+          padding-bottom: max(12px, env(safe-area-inset-bottom));
+        }
+      }
+
+      @keyframes mic-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.45); }
+        50%       { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+      }
+      .mic-listening {
+        animation: mic-pulse 1.2s ease-in-out infinite;
+      }
+
+      @keyframes speaking-pulse {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.25; }
+      }
+      .speaking-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #6c3fc5;
+        border-radius: 50%;
+        animation: speaking-pulse 1s ease-in-out infinite;
+        flex-shrink: 0;
+      }
+
+      @keyframes receive-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+        50%       { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+      }
+      .mic-receiving {
+        animation: receive-pulse 1.5s ease-in-out infinite;
+      }
+
+      @keyframes overlay-pulse {
+        0%, 100% { opacity: 0.5; }
+        50%       { opacity: 1; }
+      }
+      .overlay-hint {
+        animation: overlay-pulse 2.2s ease-in-out infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+      const BASE = window.location.origin;
+      const isTestMode =
+        new URLSearchParams(window.location.search).get("test") === "true";
+      const debugMode =
+        new URLSearchParams(window.location.search).get("debug") === "true";
+
+      const FLOOD_SCRIPT = [
+        "My name is TestUser",
+        "I want to start my own business but I keep putting it off",
+        "I've been thinking about it for about three years now",
+        "I guess I'm worried about failing and losing the income I have",
+        "My family depends on my salary so the risk feels huge",
+        "I've tried a few side projects but nothing stuck",
+        "Honestly I think I'm also not sure what kind of business I'd even want",
+        "Something in the tech space probably, I have a background in software",
+        "I think what I really want is to feel like my work matters and is mine",
+        "Yes, that summary feels pretty accurate to what I've been carrying around",
+      ];
+
+      // Converts a caught fetch error into a user-facing message.
+      // "Failed to fetch" (and similar) means the server wasn't reachable — give a
+      // friendlier prompt than a raw browser error string.
+      function friendlyError(err) {
+        if (err instanceof TypeError || err.message === "Failed to fetch") {
+          return "Could not reach the server — please wait a moment and try again.";
+        }
+        return err.message || "Sorry, something went wrong. Please try again.";
+      }
+
+      function App() {
+        const [messages, setMessages] = useState([]);
+        const [input, setInput] = useState("");
+        const [loading, setLoading] = useState(false);
+
+        const [sessionId] = useState(() => {
+          let id = localStorage.getItem("goalapp_session_id");
+          if (!id) {
+            id = crypto.randomUUID();
+            localStorage.setItem("goalapp_session_id", id);
+          }
+          return id;
+        });
+
+        // userIdentifier: e.g. "Sarah0001". Null until name is registered.
+        const [userIdentifier, setUserIdentifier] = useState(
+          () => localStorage.getItem("goalapp_user_identifier") || null,
+        );
+
+        // awaitingName: true until the user submits their name for the first time.
+        const [awaitingName, setAwaitingName] = useState(
+          () => !localStorage.getItem("goalapp_user_identifier"),
+        );
+
+        const [isFlooding, setIsFlooding] = useState(false);
+        const [floodIndex, setFloodIndex] = useState(0);
+
+        const [isListening, setIsListening] = useState(false);
+        const [speechSupported, setSpeechSupported] = useState(false);
+
+        const [voiceMode, setVoiceMode] = useState(false);
+        const [isSpeaking, setIsSpeaking] = useState(false);
+        const [synthSupported, setSynthSupported] = useState(false);
+        const [voiceStarted, setVoiceStarted] = useState(false);
+        const voiceModeRef = useRef(false);
+        const pendingStopRef = useRef(false);
+        const activeSpeechIdRef = useRef(null);
+
+        const [receiveMode, setReceiveMode] = useState(false);
+        const receiveModeRef = useRef(false);
+        const silenceTimerRef = useRef(null);
+        const accumulatedTranscriptRef = useRef('');
+        const handsFreeRef = useRef(false);
+        const recognitionRef = useRef(null);
+        const sendMessageRef = useRef(null);
+        const currentAudioRef = useRef(null);
+
+        const messagesEndRef = useRef(null);
+        const inputRef = useRef(null);
+
+        const [debugLog, setDebugLog] = useState([]);
+        const [debugOpen, setDebugOpen] = useState(false);
+        const dbg = debugMode
+          ? (msg) => {
+              const ts = new Date().toTimeString().slice(0, 8);
+              setDebugLog(prev => [`${ts} ${msg}`, ...prev].slice(0, 20));
+            }
+          : () => {};
+
+        useEffect(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, [messages, loading]);
+
+        useEffect(() => {
+          if (!loading) inputRef.current?.focus();
+        }, [loading]);
+
+        useEffect(() => {
+          setSpeechSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
+        }, []);
+
+        useEffect(() => {
+          setSynthSupported(!!window.speechSynthesis);
+        }, []);
+
+
+        // On mount: load welcome text and initialise the conversation.
+        useEffect(() => {
+          const init = async () => {
+            dbg(`App mounted, SR:${!!(window.SpeechRecognition||window.webkitSpeechRecognition)} SS:${!!window.speechSynthesis}`);
+            let welcomeText = "Welcome! What would you like to work on?";
+            try {
+              const r = await fetch(`${BASE}/welcome`);
+              const d = await r.json();
+              welcomeText = d.message;
+            } catch (err) {
+              console.error("Failed to load welcome message:", err);
+            }
+
+            // Read localStorage directly — state may not reflect latest yet.
+            const existingId = localStorage.getItem("goalapp_user_identifier");
+
+            if (!existingId) {
+              // New user — show welcome message (which asks for their name).
+              setMessages([
+                { role: "assistant", content: welcomeText, uiOnly: true },
+              ]);
+            } else {
+              // Returning user — greet by name and start the conversation.
+              const firstName = existingId.replace(/\d+$/, "");
+              setMessages([
+                {
+                  role: "assistant",
+                  content: `Welcome back, ${firstName}! Let's pick up where we left off.`,
+                  uiOnly: true,
+                },
+              ]);
+              await startConversation(existingId);
+            }
+
+            if (isTestMode) {
+              // Small delay to let React render the welcome message before flooding starts
+              setTimeout(() => setIsFlooding(true), 600);
+            }
+          };
+
+          init();
+        }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+        // Send __START__ to Claude and append its opening message.
+        // Always called with the local `identifier` variable (not state) to avoid
+        // stale closure issues immediately after setUserIdentifier().
+        const startConversation = async (identifier) => {
+          setMessages((prev) => [
+            ...prev,
+            { role: "user", content: "__START__", hidden: true },
+          ]);
+          setLoading(true);
+          try {
+            const res = await fetch(`${BASE}/chat`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId,
+                messages: [{ role: "user", content: "__START__" }],
+                userIdentifier: identifier,
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            setMessages((prev) => [
+              ...prev,
+              { role: "assistant", content: data.reply },
+            ]);
+          } catch (err) {
+            console.error("Start conversation error:", err);
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content:
+                  "Sorry, something went wrong. Please refresh and try again.",
+              },
+            ]);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        const sendMessage = async (text) => {
+          if (!text.trim() || loading) return;
+          dbg(`handleSend called: ${text.slice(0, 30)}`);
+          setInput("");
+
+          // Capture voice mode for this turn, then reset it
+          const wasVoiceMode = voiceModeRef.current;
+          voiceModeRef.current = false;
+          setVoiceMode(false);
+
+          if (awaitingName) {
+            // ── Name registration flow ──────────────────────────────────────
+            setLoading(true);
+            setMessages((prev) => [
+              ...prev,
+              { role: "user", content: text, uiOnly: true },
+            ]);
+
+            let identifier;
+            try {
+              const res = await fetch(`${BASE}/register-name`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sessionId, rawInput: text }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Registration failed");
+
+              identifier = data.userIdentifier;
+              const firstName = identifier.replace(/\d+$/, "");
+
+              localStorage.setItem("goalapp_user_identifier", identifier);
+              setUserIdentifier(identifier);
+              setAwaitingName(false);
+              setLoading(false);
+            } catch (err) {
+              console.error(err);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "assistant",
+                  content: friendlyError(err),
+                },
+              ]);
+              setLoading(false);
+              return;
+            }
+
+            // Registration succeeded — trigger Claude's opening question.
+            // Pass `identifier` (local var) not `userIdentifier` (state, still null here).
+            await startConversation(identifier);
+          } else {
+            // ── Normal chat turn ────────────────────────────────────────────
+            // Build history from current messages snapshot BEFORE adding the new one.
+            // Messages flagged uiOnly are shown in the UI but never sent to Claude.
+            // Messages flagged hidden are sent to Claude but not shown in the UI.
+            const historyToSend = [
+              ...messages
+                .filter((m) => !m.uiOnly)
+                .map(({ role, content }) => ({ role, content })),
+              { role: "user", content: text },
+            ];
+
+            setMessages((prev) => [...prev, { role: "user", content: text }]);
+            setLoading(true);
+
+            try {
+              const res = await fetch(`${BASE}/chat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  sessionId,
+                  messages: historyToSend,
+                  userIdentifier,
+                }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error);
+              dbg(`Response received, voiceMode:${wasVoiceMode} synth:${synthSupported} len:${data.reply.length}`);
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: data.reply },
+              ]);
+              if (wasVoiceMode && synthSupported) {
+                speakWithOpenAI(data.reply);
+              }
+            } catch (err) {
+              dbg(`ERROR: ${err.message}`);
+              console.error(err);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "assistant",
+                  content: friendlyError(err),
+                },
+              ]);
+            } finally {
+              setLoading(false);
+            }
+          }
+        };
+        // Always point to the latest sendMessage so async callbacks (receive mode
+        // silence timer) never close over a stale version with outdated state.
+        sendMessageRef.current = sendMessage;
+
+        const runFloodTest = async () => {
+          if (isFlooding) return;
+          setIsFlooding(true);
+          setFloodIndex(0);
+
+          // Reset session for a clean test run
+          localStorage.removeItem("goalapp_session_id");
+          localStorage.removeItem("goalapp_user_identifier");
+
+          // Brief pause then reload to start fresh
+          await new Promise((r) => setTimeout(r, 300));
+          window.location.href = window.location.pathname + "?test=true";
+        };
+
+        useEffect(() => {
+          if (!isTestMode) return;
+          if (!isFlooding) return;
+          if (loading) return;
+          if (floodIndex >= FLOOD_SCRIPT.length) {
+            setIsFlooding(false);
+            return;
+          }
+
+          const timer = setTimeout(async () => {
+            const message = FLOOD_SCRIPT[floodIndex];
+            setFloodIndex((prev) => prev + 1);
+            await sendMessage(message);
+          }, 900);
+
+          return () => clearTimeout(timer);
+        }, [isFlooding, loading, floodIndex]);
+
+        const stopReceiveMode = (leaveAccumulated = false) => {
+          receiveModeRef.current = false;
+          setReceiveMode(false);
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
+          }
+          if (recognitionRef.current) {
+            try { recognitionRef.current.stop(); } catch (_) {}
+            recognitionRef.current = null;
+          }
+          if (!leaveAccumulated) {
+            accumulatedTranscriptRef.current = '';
+            setInput('');
+          }
+        };
+
+        const startReceiveMode = () => {
+          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (!SR) return;
+          if (receiveModeRef.current) return;
+
+          dbg('startReceiveMode called');
+          receiveModeRef.current = true;
+          setReceiveMode(true);
+          accumulatedTranscriptRef.current = '';
+          setInput('');
+
+          const recognition = new SR();
+          recognition.continuous = true;
+          recognition.interimResults = false;
+          recognitionRef.current = recognition;
+
+          recognition.onresult = (event) => {
+            const transcript = event.results[event.results.length - 1][0].transcript;
+            dbg(`Result received: ${transcript.slice(0, 30)}`);
+            accumulatedTranscriptRef.current += (accumulatedTranscriptRef.current ? ' ' : '') + transcript;
+            setInput(accumulatedTranscriptRef.current);
+
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = setTimeout(() => {
+              if (receiveModeRef.current && accumulatedTranscriptRef.current.trim()) {
+                dbg(`Silence timer fired: ${accumulatedTranscriptRef.current.slice(0, 30)}`);
+                voiceModeRef.current = true;
+                setVoiceMode(true);
+                handsFreeRef.current = true;
+                const textToSend = accumulatedTranscriptRef.current;
+                stopReceiveMode(false);
+                sendMessageRef.current(textToSend);
+              }
+            }, 4000);
+          };
+
+          recognition.onend = () => {
+            // Auto-restart if still in receive mode (recognition stops after silence)
+            if (receiveModeRef.current) {
+              try { recognition.start(); } catch (_) {}
+            }
+          };
+
+          recognition.onerror = (err) => {
+            dbg(`SR onerror: ${err.error}`);
+            if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
+              receiveModeRef.current = false;
+              setReceiveMode(false);
+            }
+          };
+
+          dbg('Recognition started');
+          recognition.start();
+        };
+
+        const speakWithOpenAI = async (fullText) => {
+          dbg('TTS request sent');
+          try {
+            const response = await fetch(`${BASE}/api/tts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: fullText }),
+            });
+            if (!response.ok) throw new Error(`TTS HTTP ${response.status}`);
+            dbg('TTS audio received');
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            currentAudioRef.current = audio;
+            audio.onplay = () => {
+              dbg('TTS playback started');
+              setIsSpeaking(true);
+            };
+            audio.onended = () => {
+              dbg('TTS playback ended');
+              URL.revokeObjectURL(url);
+              currentAudioRef.current = null;
+              setIsSpeaking(false);
+              if (handsFreeRef.current) {
+                handsFreeRef.current = false;
+                startReceiveMode();
+              }
+            };
+            audio.onerror = () => {
+              dbg('TTS audio error, falling back to SS');
+              URL.revokeObjectURL(url);
+              currentAudioRef.current = null;
+              setIsSpeaking(false);
+              speakResponse(fullText, null);
+            };
+            audio.play();
+          } catch (err) {
+            dbg(`TTS failed (falling back to SS): ${err.message}`);
+            console.error('OpenAI TTS error:', err);
+            speakResponse(fullText, null);
+          }
+        };
+
+        const speakResponse = (fullText, msgId) => {
+          // Clear any stuck utterance from a previous call before queuing new ones.
+          // Chrome has a known bug where the synthesis queue can become permanently
+          // blocked; cancelling first ensures we always start from a clean state.
+          activeSpeechIdRef.current = null;
+          if (currentAudioRef.current) {
+            currentAudioRef.current.pause();
+            currentAudioRef.current = null;
+          }
+          window.speechSynthesis.cancel();
+
+          const stripMd = (t) =>
+            t
+              .replace(/\*\*([^*]+)\*\*/g, "$1")
+              .replace(/\*([^*]+)\*/g, "$1")
+              .replace(/#{1,6}\s+/g, "")
+              .replace(/`([^`]+)`/g, "$1")
+              .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
+          const raw =
+            fullText.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || [fullText];
+          const sentences = raw.map((s) => s.trim()).filter(Boolean);
+
+          const speechId = Date.now();
+          activeSpeechIdRef.current = speechId;
+          let builtText = "";
+
+          sentences.forEach((sentence, i) => {
+            const utt = new SpeechSynthesisUtterance(stripMd(sentence));
+
+            utt.onstart = () => {
+              if (activeSpeechIdRef.current !== speechId) return;
+              dbg(`SS onstart fired [s${i}]`);
+              builtText += (builtText ? " " : "") + sentence;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m._id === msgId ? { ...m, content: builtText } : m
+                )
+              );
+              setIsSpeaking(true);
+            };
+
+            utt.onend = () => {
+              if (activeSpeechIdRef.current !== speechId) return;
+              if (pendingStopRef.current) {
+                pendingStopRef.current = false;
+                handsFreeRef.current = false;
+                activeSpeechIdRef.current = null;
+                window.speechSynthesis.cancel();
+                setIsSpeaking(false);
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m._id === msgId ? { ...m, content: fullText } : m
+                  )
+                );
+                return;
+              }
+              if (i === sentences.length - 1) {
+                activeSpeechIdRef.current = null;
+                setIsSpeaking(false);
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m._id === msgId ? { ...m, content: fullText } : m
+                  )
+                );
+                if (handsFreeRef.current) {
+                  dbg(`SS onend last sentence, resuming receive`);
+                  handsFreeRef.current = false;
+                  startReceiveMode();
+                } else {
+                  dbg(`SS onend last sentence, handsFree=false`);
+                }
+              }
+            };
+
+            utt.onerror = (e) => {
+              dbg(`SS onerror: ${e.error}`);
+              if (activeSpeechIdRef.current !== speechId) return;
+              activeSpeechIdRef.current = null;
+              setIsSpeaking(false);
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m._id === msgId ? { ...m, content: fullText } : m
+                )
+              );
+            };
+
+            dbg(`SS speak() s${i}: ${stripMd(sentence).slice(0, 30)}`);
+            window.speechSynthesis.speak(utt);
+          });
+        };
+
+        const startListening = () => {
+          if (receiveModeRef.current) {
+            handsFreeRef.current = false;
+            stopReceiveMode(false);
+          } else {
+            // Cancel any ongoing speech before starting receive mode
+            if (currentAudioRef.current) {
+              currentAudioRef.current.pause();
+              currentAudioRef.current = null;
+              handsFreeRef.current = false;
+              setIsSpeaking(false);
+            }
+            if (window.speechSynthesis && window.speechSynthesis.speaking) {
+              activeSpeechIdRef.current = null;
+              pendingStopRef.current = false;
+              window.speechSynthesis.cancel();
+              setIsSpeaking(false);
+            }
+            // Unlock TTS on first use (this click IS a user gesture)
+            if (!voiceStarted && window.speechSynthesis) {
+              const u = new SpeechSynthesisUtterance('a');
+              u.volume = 0;
+              u.rate = 10;
+              window.speechSynthesis.speak(u);
+              setVoiceStarted(true);
+            }
+            startReceiveMode();
+          }
+        };
+
+        useEffect(() => {
+          const onVisible = () => {
+            if (document.visibilityState === 'visible' && receiveModeRef.current) {
+              // Recognition was likely killed by the browser when the tab was hidden;
+              // restart it now that we're visible again.
+              if (recognitionRef.current) {
+                try { recognitionRef.current.start(); } catch (_) {}
+              }
+            }
+          };
+          document.addEventListener('visibilitychange', onVisible);
+          return () => document.removeEventListener('visibilitychange', onVisible);
+        }, []);
+
+        const handleKeyDown = (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (receiveModeRef.current) {
+              voiceModeRef.current = true;
+              setVoiceMode(true);
+              handsFreeRef.current = true;
+              stopReceiveMode(true);
+            }
+            sendMessage(input);
+          }
+        };
+
+        return (
+          <>
+            {isTestMode && (
+              <div
+                style={{
+                  background: "#1a1a2e",
+                  color: "#00ff88",
+                  padding: "6px 16px",
+                  fontSize: "12px",
+                  fontFamily: "monospace",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  borderBottom: "2px solid #00ff88",
+                  flexShrink: 0,
+                }}
+              >
+                <span>⚡ TEST MODE</span>
+                <button
+                  onClick={runFloodTest}
+                  disabled={isFlooding}
+                  style={{
+                    background: isFlooding ? "#333" : "#00ff88",
+                    color: "#1a1a2e",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "4px 12px",
+                    fontSize: "11px",
+                    fontFamily: "monospace",
+                    fontWeight: "bold",
+                    cursor: isFlooding ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isFlooding
+                    ? `Flooding… (${floodIndex}/${FLOOD_SCRIPT.length})`
+                    : "Run Flood Test"}
+                </button>
+                {!isFlooding && floodIndex > 0 && (
+                  <span style={{ color: "#aaa" }}>
+                    ✓ Complete — {FLOOD_SCRIPT.length} messages sent
+                  </span>
+                )}
+                <span style={{ marginLeft: "auto", color: "#666" }}>
+                  Never visible in production
+                </span>
+              </div>
+            )}
+            <header>
+              <h1>My Success Story</h1>
+            </header>
+
+            <div id="messages">
+              {messages
+                .filter((m) => !m.hidden)
+                .map((msg, i) => (
+                  <div key={i} className={`message ${msg.role}`}>
+                    {msg.content}
+                  </div>
+                ))}
+              {loading && <div className="typing">Thinking...</div>}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {!voiceStarted && (
+              <div
+                onClick={() => {
+                  if (window.speechSynthesis) {
+                    const u = new SpeechSynthesisUtterance('a');
+                    u.volume = 0;
+                    u.rate = 10;
+                    window.speechSynthesis.speak(u);
+                  }
+                  dbg('Overlay tapped, calling startReceiveMode');
+                  setVoiceStarted(true);
+                  dbg('SS warmup utterance fired');
+                  const utterance = new SpeechSynthesisUtterance('');
+                  window.speechSynthesis.speak(utterance);
+                  if (speechSupported) startReceiveMode();
+                }}
+                style={{
+                  position: "fixed", inset: 0, zIndex: 50,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "#0d0d1a",
+                  cursor: "pointer",
+                  userSelect: "none",
+                }}
+              >
+                <div style={{ textAlign: "center", padding: "0 32px" }}>
+                  <h1 style={{
+                    fontSize: "clamp(26px, 6vw, 38px)",
+                    fontWeight: 700,
+                    color: "white",
+                    marginBottom: "20px",
+                    letterSpacing: "-0.5px",
+                  }}>
+                    My Success Story
+                  </h1>
+                  <p className="overlay-hint" style={{
+                    fontSize: "16px",
+                    fontWeight: 400,
+                    color: "rgba(255,255,255,0.7)",
+                    margin: 0,
+                  }}>
+                    Tap to begin your session
+                  </p>
+                </div>
+              </div>
+            )}
+            {(receiveMode && !loading && !isSpeaking) && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px 8px", fontSize: "12px", color: "#6c757d" }}>
+                <span style={{ display: "inline-block", width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%", flexShrink: 0 }} />
+                <span>Listening…</span>
+              </div>
+            )}
+            {isSpeaking && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px 8px", fontSize: "12px", color: "#6c757d" }}>
+                <span className="speaking-dot" />
+                <span>Speaking…</span>
+              </div>
+            )}
+
+            <footer>
+              {speechSupported && (
+                <button
+                  onClick={startListening}
+                  disabled={loading}
+                  className={receiveMode ? "mic-receiving" : isListening ? "mic-listening" : ""}
+                  style={{
+                    background: receiveMode ? "#16a34a" : isListening ? "#dc3545" : "#e9ecef",
+                    color: (receiveMode || isListening) ? "white" : "#495057",
+                    flexShrink: 0,
+                    padding: "10px 12px",
+                  }}
+                  aria-label={receiveMode ? "Stop listening" : "Start voice conversation"}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/>
+                    <path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-2.08A7 7 0 0 0 19 11z"/>
+                  </svg>
+                </button>
+              )}
+              <textarea
+                ref={inputRef}
+                rows="2"
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  if (receiveModeRef.current) {
+                    handsFreeRef.current = false;
+                    stopReceiveMode(true);
+                  }
+                  if (voiceModeRef.current) {
+                    voiceModeRef.current = false;
+                    setVoiceMode(false);
+                  }
+                  if (isSpeaking) {
+                    if (currentAudioRef.current) {
+                      currentAudioRef.current.pause();
+                      currentAudioRef.current = null;
+                      setIsSpeaking(false);
+                    } else {
+                      pendingStopRef.current = true;
+                    }
+                  }
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  awaitingName ? "Enter your name..." : "Type your message..."
+                }
+                disabled={loading}
+              />
+              <button
+                onClick={() => {
+                  if (receiveModeRef.current) {
+                    voiceModeRef.current = true;
+                    setVoiceMode(true);
+                    handsFreeRef.current = true;
+                    stopReceiveMode(true);
+                  }
+                  sendMessage(input);
+                }}
+                disabled={loading || !input.trim()}
+              >
+                Send
+              </button>
+            </footer>
+
+            {debugMode && (
+              <div style={{
+                position: "fixed", bottom: 0, right: 0, zIndex: 200,
+                display: "flex", flexDirection: "column", alignItems: "flex-end",
+              }}>
+                <button
+                  onClick={() => setDebugOpen(o => !o)}
+                  style={{
+                    background: "#111", color: "#0f0", border: "none",
+                    fontFamily: "monospace", fontSize: "10px",
+                    padding: "3px 8px", cursor: "pointer", opacity: 0.85,
+                  }}
+                >{debugOpen ? "▼ DEBUG" : "▲ DEBUG"}</button>
+                {debugOpen && (
+                  <div style={{
+                    width: "min(340px, 96vw)", maxHeight: "40vh", overflowY: "auto",
+                    background: "rgba(0,0,0,0.9)", color: "#0f0",
+                    fontFamily: "monospace", fontSize: "11px",
+                    padding: "6px 8px", lineHeight: 1.5,
+                  }}>
+                    {debugLog.length === 0 && <div style={{color:"#666"}}>no events yet</div>}
+                    {debugLog.map((entry, i) => (
+                      <div key={i}>{entry}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+          if (!isMobile) return;
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[SW] Registered:', reg.scope))
+            .catch(err => console.error('[SW] Failed:', err));
+        });
+      }
+    </script>
+  </body>
+</html>

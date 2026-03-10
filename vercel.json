@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "prototype/server.js",
+      "use": "@vercel/node",
+      "config": {
+        "buildCommand": "cd prototype && npm run build",
+        "includeFiles": [
+          "prototype/index.html",
+          "prototype/admin.html",
+          "prototype/sw.js",
+          "prototype/public/manifest.json",
+          "prototype/public/icons/**",
+          "prompts/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/manifest.json", "dest": "prototype/server.js" },
+    { "src": "/sw.js", "dest": "prototype/server.js" },
+    { "src": "/icons/(.*)", "dest": "prototype/server.js" },
+    { "src": "/(.*)", "dest": "prototype/server.js" }
+  ]
+}

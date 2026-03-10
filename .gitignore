@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Environment variables — never commit real keys
+.env
+.env.local
+.env.*.local
+prototype/.env
+
+# Log files
+logs/
+*.log
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Claude Code auto-generated session backup files (CLAUDE000.md, CLAUDE001.md, etc.)
+CLAUDE[0-9]*.md
