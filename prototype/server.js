@@ -58,6 +58,10 @@ function stripMarkdown(text) {
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 }
 
+// Debug environment variables
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+console.log('SUPABASE_ANON_KEY exists:', !!process.env.SUPABASE_ANON_KEY);
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
@@ -266,14 +270,13 @@ app.post('/chat', async (req, res) => {
     const reply = response.content[0].text;
     const { input_tokens, output_tokens } = response.usage;
 
-    // Log to Supabase — fire and forget
+    // Log to Supabase — awaited so Vercel doesn't freeze the function before the write completes
     const ts = formatTimestamp();
-    supabase.from('conversation_logs').insert([
+    const { error: logError } = await supabase.from('conversation_logs').insert([
       { session_id: sessionId, role: 'user',      content: userMessage, timestamp_display: ts },
       { session_id: sessionId, role: 'assistant', content: reply,       timestamp_display: ts, input_tokens, output_tokens },
-    ]).then(({ error }) => {
-      if (error) console.error('Supabase log error:', error.message);
-    });
+    ]);
+    if (logError) console.error('Supabase log error:', logError.message);
 
     const label = userIdentifier ?? sessionId;
     console.log(`[${label}] Turn ${Math.ceil(messages.length / 2)}`);
