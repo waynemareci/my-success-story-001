@@ -80,9 +80,43 @@ function formatTimestamp(date = new Date()) {
   return `${get('weekday')} ${get('month')} ${get('day')} ${get('hour')}:${get('minute')}:${get('second')} ${get('dayPeriod')} ${get('timeZoneName')}`;
 }
 
-// In-memory session store for synthesis pipeline data
-// { sessionId -> { extractionData, pendingNarrative, storyConfirmed, confirmedNarrative } }
-const sessionStore = new Map();
+// Supabase-backed session helpers — replaces in-memory sessionStore Map
+async function getSession(sessionId) {
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('*')
+    .eq('session_id', sessionId)
+    .single();
+  if (error || !data) return {};
+  return {
+    extractionData:     data.extraction_data,
+    extractionJson:     data.extraction_json,
+    firstName:          data.first_name,
+    storyConfirmed:     data.story_confirmed     ?? false,
+    confirmedNarrative: data.confirmed_narrative,
+    pendingNarrative:   data.pending_narrative,
+    nextChapter:        data.next_chapter,
+    chapterConfirmed:   data.chapter_confirmed   ?? false,
+  };
+}
+
+async function saveSession(sessionId, session) {
+  const { error } = await supabase
+    .from('sessions')
+    .upsert({
+      session_id:          sessionId,
+      extraction_data:     session.extractionData,
+      extraction_json:     session.extractionJson,
+      first_name:          session.firstName,
+      story_confirmed:     session.storyConfirmed     ?? false,
+      confirmed_narrative: session.confirmedNarrative,
+      pending_narrative:   session.pendingNarrative,
+      next_chapter:        session.nextChapter,
+      chapter_confirmed:   session.chapterConfirmed   ?? false,
+      updated_at:          new Date().toISOString(),
+    }, { onConflict: 'session_id' });
+  if (error) console.error('saveSession error:', error);
+}
 
 const SYNTHESIS_MARKER = '%%SYNTHESIS_READY%%';
 const STORY_CONFIRMED_MARKER = '%%STORY_CONFIRMED%%';
@@ -273,10 +307,10 @@ async function runSynthesisPipeline(sessionId, messages) {
   }
 
   // Persist extraction data to session store
-  const session = sessionStore.get(sessionId) || {};
+  const session = await getSession(sessionId);
   session.extractionData = extractedData;
   session.extractionJson = extractedData;   // alias used by Next Chapter pipeline
-  sessionStore.set(sessionId, session);
+  await saveSession(sessionId, session);
 
   const { error: extractionError } = await supabase
     .from('users')
@@ -301,9 +335,9 @@ async function runSynthesisPipeline(sessionId, messages) {
   const narrative = synthesisResp.content[0].text.trim();
 
   // Persist pending narrative so %%STORY_CONFIRMED%% can retrieve it later
-  const updatedSession = sessionStore.get(sessionId) || {};
+  const updatedSession = await getSession(sessionId);
   updatedSession.pendingNarrative = narrative;
-  sessionStore.set(sessionId, updatedSession);
+  await saveSession(sessionId, updatedSession);
 
   console.log(`[${sessionId}] Synthesis complete`);
   const synthesisText = narrative;
@@ -341,10 +375,10 @@ app.post('/chat', async (req, res) => {
   const { sessionId = crypto.randomUUID(), messages, userIdentifier } = req.body;
 
   if (userIdentifier) {
-    const session = sessionStore.get(sessionId) || {};
+    const session = await getSession(sessionId);
     const raw = userIdentifier.replace(/\d+$/, '');
     session.firstName = raw.charAt(0).toUpperCase() + raw.slice(1);
-    sessionStore.set(sessionId, session);
+    await saveSession(sessionId, session);
   }
 
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -417,8 +451,9 @@ app.post('/chat', async (req, res) => {
       // Always strip the marker from the reply
       finalReply = rawReply.replace(STORY_CONFIRMED_MARKER, '').trim();
       // Only run the pipeline and set session flags the first time
-      if (!sessionStore.get(sessionId)?.storyConfirmed) {
-        const session = sessionStore.get(sessionId) || {};
+      const existingSession = await getSession(sessionId);
+      if (!existingSession.storyConfirmed) {
+        const session = existingSession;
         session.storyConfirmed = true;
         session.confirmedNarrative = session.pendingNarrative ?? finalReply;
 
@@ -434,17 +469,17 @@ app.post('/chat', async (req, res) => {
           console.error(`[${sessionId}] Next Chapter pipeline failed:`, err.message);
         }
 
-        sessionStore.set(sessionId, session);
+        await saveSession(sessionId, session);
         console.log(`[${sessionId}] %%STORY_CONFIRMED%% — story and Next Chapter stored`);
       }
     } else if (rawReply.includes(CHAPTER_CONFIRMED_MARKER)) {
       // Always strip the marker from the reply
       finalReply = rawReply.replace(CHAPTER_CONFIRMED_MARKER, '').trim();
       // Only set session flag the first time
-      if (!sessionStore.get(sessionId)?.chapterConfirmed) {
-        const session = sessionStore.get(sessionId) || {};
-        session.chapterConfirmed = true;
-        sessionStore.set(sessionId, session);
+      const chSession = await getSession(sessionId);
+      if (!chSession.chapterConfirmed) {
+        chSession.chapterConfirmed = true;
+        await saveSession(sessionId, chSession);
         console.log(`[${sessionId}] %%CHAPTER_CONFIRMED%% — Next Chapter confirmed`);
       }
     }
@@ -468,9 +503,9 @@ app.post('/chat', async (req, res) => {
 });
 
 // GET /session/:sessionId — return current synthesis/chapter state flags to the frontend
-app.get('/session/:sessionId', (req, res) => {
+app.get('/session/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
-  const session = sessionStore.get(sessionId) || {};
+  const session = await getSession(sessionId);
   res.json({
     storyConfirmed:   session.storyConfirmed   ?? false,
     chapterConfirmed: session.chapterConfirmed ?? false,
@@ -480,13 +515,13 @@ app.get('/session/:sessionId', (req, res) => {
 });
 
 // GET /getpdf/:sessionId — generate and stream a PDF of the story + Next Chapter
-app.get('/getpdf/:sessionId', (req, res) => {
+app.get('/getpdf/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
-  const session = sessionStore.get(sessionId);
+  const session = await getSession(sessionId);
   res.set('Cache-Control', 'no-store');
   res.set('Pragma', 'no-cache');
 
-  if (!session || !session.confirmedNarrative) {
+  if (!session.confirmedNarrative) {
     return res.status(404).json({ error: 'No confirmed story found for this session' });
   }
 
@@ -664,18 +699,17 @@ app.get('/admin/transcript/:sessionId', async (req, res) => {
   });
 });
 
-app.post('/seed-fixture-session', (_req, res) => {
+app.post('/seed-fixture-session', async (_req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ error: 'Not found' });
   }
-  const session = {
+  await saveSession('fixture-test-session', {
     firstName: 'Michael',
     storyConfirmed: true,
     chapterConfirmed: true,
     confirmedNarrative: `You didn't stay eleven years because you were afraid to leave. You stayed because leaving would have cost you something that took a long time to build — not the salary, not the title, but the proof. Proof that you were someone who sticks.\n\nWhat came through most clearly is that the thing you actually want has been sitting in a drawer for three years, written out twice, shown to no one. That's not procrastination. That's a very specific kind of courage withheld — because inside your current job, failure has a buffer. If something goes wrong, there's a structure to absorb it. What you're really afraid of isn't failure. It's failure with your name on it and nothing else to point to.\n\nThe harder thing to name is this: you built your identity in opposition to your father. Staying became proof. But the consulting practice has been in that drawer partly because if it fails, you can't use staying as the evidence anymore. The escape from one fear quietly became the entrance to another.`,
-    nextChapter: `This isn't a plan — plans come later. These are just the first moves.\n\n1. Show the business plan to one person this week.\nNot to get permission — to break the private/public seal that has kept this in a drawer for three years.\n\n2. Write down what failure actually looks like.\nNot the vague fear of it. The specific thing. Most people discover the actual answer is survivable.\n\n3. Set a date — not to launch, but to decide.\nPick a date three months from now by which you will have made a decision. Decisions have a different gravity than intentions.`
-  };
-  sessionStore.set('fixture-test-session', session);
+    nextChapter: `This isn't a plan — plans come later. These are just the first moves.\n\n1. Show the business plan to one person this week.\nNot to get permission — to break the private/public seal that has kept this in a drawer for three years.\n\n2. Write down what failure actually looks like.\nNot the vague fear of it. The specific thing. Most people discover the actual answer is survivable.\n\n3. Set a date — not to launch, but to decide.\nPick a date three months from now by which you will have made a decision. Decisions have a different gravity than intentions.`,
+  });
   res.json({ ok: true });
 });
 

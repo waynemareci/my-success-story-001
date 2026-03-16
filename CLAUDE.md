@@ -480,6 +480,12 @@ Strategy Facilitator/
 
 ## Change Log
 
+### Supabase session persistence
+- Replaced in-memory sessionStore Map with Supabase-backed session persistence
+- Added getSession() and saveSession() async helpers wrapping the `sessions` table
+- All sessionStore.get / sessionStore.set calls replaced throughout server.js
+- Fixes synthesis pipeline and PDF generation failures on Vercel serverless
+
 ### Admin Synthesis Notes Display
 - Extended GET /admin/transcript/:sessionId to return extractionJson and userIdentifier
   from users table
