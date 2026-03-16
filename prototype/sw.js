@@ -33,10 +33,17 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (url.pathname.startsWith('/chat') ||
+  if (url.pathname === '/' ||
+      url.pathname === '/index.html' ||
+      url.pathname.startsWith('/chat') ||
       url.pathname.startsWith('/register-name') ||
       url.pathname.startsWith('/welcome') ||
-      url.pathname.startsWith('/admin')) {
+      url.pathname.startsWith('/admin') ||
+      url.pathname.startsWith('/getpdf/') ||
+      url.pathname.startsWith('/download-pdf/') ||
+      url.pathname.startsWith('/session/') ||
+      url.pathname.startsWith('/api/') ||
+      url.pathname === '/seed-fixture-session') {
     return;
   }
 

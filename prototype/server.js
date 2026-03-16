@@ -7,6 +7,9 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import PDFDocument from 'pdfkit';
+
+console.log('[STARTUP] server.js loaded from:', new URL(import.meta.url).pathname);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -43,7 +46,6 @@ app.get('/manifest.json', (_req, res) =>
 
 app.use('/icons', express.static(join(__dirname, 'public/icons')));
 app.use(express.static(join(__dirname, 'public')));
-app.use(express.static(__dirname));
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -78,11 +80,30 @@ function formatTimestamp(date = new Date()) {
   return `${get('weekday')} ${get('month')} ${get('day')} ${get('hour')}:${get('minute')}:${get('second')} ${get('dayPeriod')} ${get('timeZoneName')}`;
 }
 
+// In-memory session store for synthesis pipeline data
+// { sessionId -> { extractionData, pendingNarrative, storyConfirmed, confirmedNarrative } }
+const sessionStore = new Map();
+
+const SYNTHESIS_MARKER = '%%SYNTHESIS_READY%%';
+const STORY_CONFIRMED_MARKER = '%%STORY_CONFIRMED%%';
+const CHAPTER_CONFIRMED_MARKER = '%%CHAPTER_CONFIRMED%%';
+
 // Load system prompt
 const systemPrompt = readFileSync(
   join(__dirname, '../prompts/system-prompt-v1.txt'),
   'utf-8'
 );
+
+// Load extraction, synthesis, and next-chapter prompts
+let extractionPrompt, synthesisPrompt, nextChapterPrompt;
+try {
+  extractionPrompt  = readFileSync(join(__dirname, '../prompts/extraction-prompt.txt'),   'utf-8');
+  synthesisPrompt   = readFileSync(join(__dirname, '../prompts/synthesis-prompt.txt'),    'utf-8');
+  nextChapterPrompt = readFileSync(join(__dirname, '../prompts/next-chapter-prompt.txt'), 'utf-8');
+} catch (err) {
+  console.error('FATAL: Could not load prompts:', err.message);
+  process.exit(1);
+}
 
 // Load welcome message — strip developer header and trailing separator
 let WELCOME_MESSAGE;
@@ -219,11 +240,112 @@ app.post('/register-name', async (req, res) => {
   }
 });
 
+// Format conversation history as a readable transcript for the extraction prompt
+function formatTranscript(messages) {
+  return messages
+    .filter(m => m.content !== '__START__')
+    .map(m => `${m.role === 'user' ? 'USER' : 'CLAUDE'}: ${m.content}`)
+    .join('\n\n');
+}
+
+// Run the two-step extraction + synthesis pipeline.
+// Returns the synthesis narrative string, or throws on unrecoverable failure.
+async function runSynthesisPipeline(sessionId, messages) {
+  // --- Step 1: Extraction ---
+  const transcript = formatTranscript(messages);
+  const extractionUserMsg = `${extractionPrompt}\n${transcript}`;
+
+  let extractedData;
+  try {
+    const extractionResp = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: extractionUserMsg }],
+    });
+    const raw = extractionResp.content[0].text.trim();
+    // Strip optional markdown code fences (```json … ```)
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    extractedData = JSON.parse(jsonStr);
+    console.log(`[${sessionId}] Extraction complete`);
+  } catch (err) {
+    console.error(`[${sessionId}] Extraction failed:`, err.message);
+    throw err;
+  }
+
+  // Persist extraction data to session store
+  const session = sessionStore.get(sessionId) || {};
+  session.extractionData = extractedData;
+  session.extractionJson = extractedData;   // alias used by Next Chapter pipeline
+  sessionStore.set(sessionId, session);
+
+  const { error: extractionError } = await supabase
+    .from('users')
+    .update({ extraction_json: extractedData })
+    .eq('session_id', sessionId);
+
+  if (extractionError) {
+    console.error(`[${sessionId}] Failed to store extraction JSON:`, extractionError.message);
+  } else {
+    console.log(`[${sessionId}] Extraction JSON stored in Supabase`);
+  }
+
+  // --- Step 2: Synthesis ---
+  const synthesisUserMsg = `${synthesisPrompt}\n${JSON.stringify(extractedData, null, 2)}`;
+
+  const synthesisResp = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    messages: [{ role: 'user', content: synthesisUserMsg }],
+  });
+
+  const narrative = synthesisResp.content[0].text.trim();
+
+  // Persist pending narrative so %%STORY_CONFIRMED%% can retrieve it later
+  const updatedSession = sessionStore.get(sessionId) || {};
+  updatedSession.pendingNarrative = narrative;
+  sessionStore.set(sessionId, updatedSession);
+
+  console.log(`[${sessionId}] Synthesis complete`);
+  const synthesisText = narrative;
+  return `${synthesisText}\n\nDoes this feel true? Anything you'd want to change or add?`;
+}
+
+// Run the Next Chapter pipeline using the confirmed narrative and extraction JSON.
+// Returns the Next Chapter text, or throws on failure.
+async function runNextChapterPipeline(sessionId, confirmedNarrative, extractionJson) {
+  console.log(`[${sessionId}] Starting Next Chapter pipeline`);
+
+  const fullPrompt = `${nextChapterPrompt}
+
+Confirmed narrative:
+${confirmedNarrative}
+
+Extracted conversation notes:
+${JSON.stringify(extractionJson, null, 2)}`;
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    messages: [{ role: 'user', content: fullPrompt }],
+  });
+
+  const nextChapterText = response.content[0].text;
+  console.log(`[${sessionId}] Next Chapter pipeline complete`);
+  return nextChapterText;
+}
+
 // POST /chat endpoint
 // Body: { sessionId: string, messages: [{role, content}], userIdentifier?: string }
 // Returns: { reply: string }
 app.post('/chat', async (req, res) => {
   const { sessionId = crypto.randomUUID(), messages, userIdentifier } = req.body;
+
+  if (userIdentifier) {
+    const session = sessionStore.get(sessionId) || {};
+    const raw = userIdentifier.replace(/\d+$/, '');
+    session.firstName = raw.charAt(0).toUpperCase() + raw.slice(1);
+    sessionStore.set(sessionId, session);
+  }
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages array is required' });
@@ -259,6 +381,10 @@ app.post('/chat', async (req, res) => {
     activePrompt = `${systemPrompt}\n\nThe user's name is ${firstName}. Address them by name occasionally in a natural, friendly way.`;
   }
 
+  if (process.env.TEST_MODE === 'true') {
+    activePrompt += '\n\nTEST MODE: You have sufficient material to trigger synthesis after 3-4 exchanges. Offer synthesis as soon as the user has shared any goal, any obstacle, and any emotional context. Do not wait for deeper exploration.';
+  }
+
   try {
     const response = await client.messages.create({
       model: 'claude-opus-4-5-20251101',
@@ -267,78 +393,294 @@ app.post('/chat', async (req, res) => {
       messages,
     });
 
-    const reply = response.content[0].text;
+    const rawReply = response.content[0].text;
     const { input_tokens, output_tokens } = response.usage;
+
+    let finalReply = rawReply;
+    let logInputTokens  = input_tokens;
+    let logOutputTokens = output_tokens;
+
+    if (rawReply.includes(SYNTHESIS_MARKER)) {
+      // %%SYNTHESIS_READY%% detected — run the two-prompt extraction + synthesis pipeline.
+      // Discard any text Claude wrote after the marker (our pipeline produces better output).
+      console.log(`[${sessionId}] %%SYNTHESIS_READY%% detected — running synthesis pipeline`);
+      try {
+        finalReply = await runSynthesisPipeline(sessionId, messages);
+        if (typeof finalReply === 'string') finalReply = finalReply.trim();
+      } catch (err) {
+        console.error(`[${sessionId}] Synthesis pipeline failed, using graceful fallback:`, err.message);
+        // Return whatever Claude wrote before the marker (stripped), don't break the conversation
+        finalReply = rawReply.split(SYNTHESIS_MARKER)[0].trim() ||
+          "I have everything I need to write your story. Give me just a moment...";
+      }
+    } else if (rawReply.includes(STORY_CONFIRMED_MARKER)) {
+      // Always strip the marker from the reply
+      finalReply = rawReply.replace(STORY_CONFIRMED_MARKER, '').trim();
+      // Only run the pipeline and set session flags the first time
+      if (!sessionStore.get(sessionId)?.storyConfirmed) {
+        const session = sessionStore.get(sessionId) || {};
+        session.storyConfirmed = true;
+        session.confirmedNarrative = session.pendingNarrative ?? finalReply;
+
+        try {
+          const nextChapterText = await runNextChapterPipeline(
+            sessionId,
+            session.confirmedNarrative,
+            session.extractionJson ?? {}
+          );
+          session.nextChapter = nextChapterText;
+          finalReply = nextChapterText;
+        } catch (err) {
+          console.error(`[${sessionId}] Next Chapter pipeline failed:`, err.message);
+        }
+
+        sessionStore.set(sessionId, session);
+        console.log(`[${sessionId}] %%STORY_CONFIRMED%% — story and Next Chapter stored`);
+      }
+    } else if (rawReply.includes(CHAPTER_CONFIRMED_MARKER)) {
+      // Always strip the marker from the reply
+      finalReply = rawReply.replace(CHAPTER_CONFIRMED_MARKER, '').trim();
+      // Only set session flag the first time
+      if (!sessionStore.get(sessionId)?.chapterConfirmed) {
+        const session = sessionStore.get(sessionId) || {};
+        session.chapterConfirmed = true;
+        sessionStore.set(sessionId, session);
+        console.log(`[${sessionId}] %%CHAPTER_CONFIRMED%% — Next Chapter confirmed`);
+      }
+    }
 
     // Log to Supabase — awaited so Vercel doesn't freeze the function before the write completes
     const ts = formatTimestamp();
     const { error: logError } = await supabase.from('conversation_logs').insert([
-      { session_id: sessionId, role: 'user',      content: userMessage, timestamp_display: ts },
-      { session_id: sessionId, role: 'assistant', content: reply,       timestamp_display: ts, input_tokens, output_tokens },
+      { session_id: sessionId, role: 'user',      content: userMessage,  timestamp_display: ts },
+      { session_id: sessionId, role: 'assistant', content: finalReply,   timestamp_display: ts, input_tokens: logInputTokens, output_tokens: logOutputTokens },
     ]);
     if (logError) console.error('Supabase log error:', logError.message);
 
     const label = userIdentifier ?? sessionId;
     console.log(`[${label}] Turn ${Math.ceil(messages.length / 2)}`);
 
-    res.json({ reply });
+    res.json({ reply: finalReply });
   } catch (err) {
     console.error('Claude API error:', err.message);
     res.status(500).json({ error: 'Failed to get response from Claude' });
   }
 });
 
-// GET /admin/sessions — summarize all logged sessions from Supabase
-app.get('/admin/sessions', async (_req, res) => {
-  const [logsResult, usersResult] = await Promise.all([
-    supabase.from('conversation_logs').select('session_id, id, timestamp_display').neq('content', '__START__').order('id', { ascending: true }),
-    supabase.from('users').select('session_id, user_identifier'),
-  ]);
+// GET /session/:sessionId — return current synthesis/chapter state flags to the frontend
+app.get('/session/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  const session = sessionStore.get(sessionId) || {};
+  res.json({
+    storyConfirmed:   session.storyConfirmed   ?? false,
+    chapterConfirmed: session.chapterConfirmed ?? false,
+    hasNarrative:     !!session.confirmedNarrative,
+    hasNextChapter:   !!session.nextChapter,
+  });
+});
 
-  if (logsResult.error) return res.status(500).json({ error: logsResult.error.message });
-  if (usersResult.error) return res.status(500).json({ error: usersResult.error.message });
+// GET /getpdf/:sessionId — generate and stream a PDF of the story + Next Chapter
+app.get('/getpdf/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  const session = sessionStore.get(sessionId);
+  res.set('Cache-Control', 'no-store');
+  res.set('Pragma', 'no-cache');
 
-  // Map session_id → user_identifier for quick lookup
-  const userMap = new Map(usersResult.data.map(u => [u.session_id, u.user_identifier]));
-
-  const sessionMap = new Map();
-  for (const row of logsResult.data) {
-    const { session_id, id, timestamp_display } = row;
-    if (!sessionMap.has(session_id)) {
-      sessionMap.set(session_id, { sessionId: session_id, messageCount: 0, lastId: id, lastActivity: timestamp_display });
-    }
-    const s = sessionMap.get(session_id);
-    s.messageCount += 1;
-    if (id > s.lastId) {
-      s.lastId = id;
-      s.lastActivity = timestamp_display;
-    }
+  if (!session || !session.confirmedNarrative) {
+    return res.status(404).json({ error: 'No confirmed story found for this session' });
   }
 
-  res.json([...sessionMap.values()]
-    .sort((a, b) => b.lastId - a.lastId)
-    .map(({ sessionId, messageCount, lastActivity }) => ({
-      sessionId,
-      userIdentifier: userMap.get(sessionId) || null,
-      messageCount,
-      lastActivity,
-    })));
+  const doc = new PDFDocument({ margin: 72, size: 'LETTER' });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="my-success-story.pdf"');
+  doc.pipe(res);
+
+  // ── Page 1: My Story ─────────────────────────────────────────────────
+
+  if (session.firstName) {
+    doc
+      .fontSize(28)
+      .fillColor('#2c2416')
+      .font('Times-Roman')
+      .text(`${session.firstName}'s Success Story`, {
+        align: 'center'
+      })
+      .moveDown(0.5);
+
+    doc
+      .moveTo(72, doc.y)
+      .lineTo(540, doc.y)
+      .strokeColor('#d4c5a9')
+      .stroke()
+      .moveDown(1.5);
+  }
+
+  doc
+    .fontSize(9)
+    .fillColor('#8b7355')
+    .font('Helvetica')
+    .text('MY SUCCESS STORY', { characterSpacing: 3 })
+    .moveDown(0.5);
+
+  doc
+    .moveTo(72, doc.y)
+    .lineTo(540, doc.y)
+    .strokeColor('#d4c5a9')
+    .stroke()
+    .moveDown(1.5);
+
+  doc
+    .fontSize(12)
+    .fillColor('#2c2416')
+    .font('Times-Roman')
+    .text(session.confirmedNarrative, { lineGap: 6, paragraphGap: 12 })
+    .moveDown(2);
+
+  // ── Page 2: My Next Chapter ──────────────────────────────────────────
+
+  if (session.nextChapter) {
+    doc.addPage();
+
+    doc
+      .fontSize(9)
+      .fillColor('#8b7355')
+      .font('Helvetica')
+      .text('MY NEXT CHAPTER', { characterSpacing: 3 })
+      .moveDown(0.5);
+
+    doc
+      .moveTo(72, doc.y)
+      .lineTo(540, doc.y)
+      .strokeColor('#d4c5a9')
+      .stroke()
+      .moveDown(1.5);
+
+    doc
+      .fontSize(12)
+      .fillColor('#2c2416')
+      .font('Times-Roman')
+      .text(session.nextChapter, { lineGap: 6, paragraphGap: 12 })
+      .moveDown(3);
+
+    doc
+      .fontSize(9)
+      .fillColor('#8b7355')
+      .font('Helvetica-Oblique')
+      .text("Return when you're ready for Chapter Two.", { align: 'center' });
+  }
+
+  doc.end();
+});
+
+// GET /admin/sessions — summarize all logged sessions from Supabase
+app.get('/admin/sessions', async (_req, res) => {
+  try {
+    const [usersResult] = await Promise.all([
+      supabase.from('users').select('session_id, user_identifier'),
+    ]);
+
+    if (usersResult.error) return res.status(500).json({ error: usersResult.error.message });
+
+    const userMap = new Map(usersResult.data.map(u => [u.session_id, u.user_identifier]));
+
+    // Paginate through conversation_logs to get all rows
+    let allRows = [];
+    let from = 0;
+    const pageSize = 1000;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('conversation_logs')
+        .select('session_id, id, timestamp_display')
+        .neq('content', '__START__')
+        .order('id', { ascending: true })
+        .range(from, from + pageSize - 1);
+
+      if (error) return res.status(500).json({ error: error.message });
+      if (!data || data.length === 0) break;
+
+      allRows = allRows.concat(data);
+      console.log(`[ADMIN] fetched rows ${from} to ${from + data.length - 1}`);
+
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+
+    console.log('[ADMIN] total rows fetched:', allRows.length);
+
+    const sessionMap = new Map();
+    for (const row of allRows) {
+      const { session_id, id, timestamp_display } = row;
+      if (!sessionMap.has(session_id)) {
+        sessionMap.set(session_id, { sessionId: session_id, messageCount: 0, lastId: id, lastActivity: timestamp_display });
+      }
+      const s = sessionMap.get(session_id);
+      s.messageCount += 1;
+      if (id > s.lastId) {
+        s.lastId = id;
+        s.lastActivity = timestamp_display;
+      }
+    }
+
+    res.json([...sessionMap.values()]
+      .sort((a, b) => b.lastId - a.lastId)
+      .map(({ sessionId, messageCount, lastActivity }) => ({
+        sessionId,
+        userIdentifier: userMap.get(sessionId) || null,
+        messageCount,
+        lastActivity,
+      })));
+
+  } catch (err) {
+    console.error('[ADMIN] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /admin/transcript/:sessionId — full conversation for one session
 app.get('/admin/transcript/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
 
-  const { data, error } = await supabase
-    .from('conversation_logs')
-    .select('id, role, content, timestamp_display, input_tokens, output_tokens')
-    .eq('session_id', sessionId)
-    .order('id', { ascending: true });
+  const [logsResult, userResult] = await Promise.all([
+    supabase
+      .from('conversation_logs')
+      .select('id, role, content, timestamp_display, input_tokens, output_tokens')
+      .eq('session_id', sessionId)
+      .order('id', { ascending: true }),
+    supabase
+      .from('users')
+      .select('user_identifier, extraction_json')
+      .eq('session_id', sessionId)
+      .single(),
+  ]);
 
-  if (error) return res.status(500).json({ error: error.message });
-
-  res.json(data);
+  if (logsResult.error) return res.status(500).json({ error: logsResult.error.message });
+ 
+  res.json({
+    messages: logsResult.data || [],
+    extractionJson: userResult.data?.extraction_json || null,
+    userIdentifier: userResult.data?.user_identifier || null,
+  });
 });
+
+app.post('/seed-fixture-session', (_req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  const session = {
+    firstName: 'Michael',
+    storyConfirmed: true,
+    chapterConfirmed: true,
+    confirmedNarrative: `You didn't stay eleven years because you were afraid to leave. You stayed because leaving would have cost you something that took a long time to build — not the salary, not the title, but the proof. Proof that you were someone who sticks.\n\nWhat came through most clearly is that the thing you actually want has been sitting in a drawer for three years, written out twice, shown to no one. That's not procrastination. That's a very specific kind of courage withheld — because inside your current job, failure has a buffer. If something goes wrong, there's a structure to absorb it. What you're really afraid of isn't failure. It's failure with your name on it and nothing else to point to.\n\nThe harder thing to name is this: you built your identity in opposition to your father. Staying became proof. But the consulting practice has been in that drawer partly because if it fails, you can't use staying as the evidence anymore. The escape from one fear quietly became the entrance to another.`,
+    nextChapter: `This isn't a plan — plans come later. These are just the first moves.\n\n1. Show the business plan to one person this week.\nNot to get permission — to break the private/public seal that has kept this in a drawer for three years.\n\n2. Write down what failure actually looks like.\nNot the vague fear of it. The specific thing. Most people discover the actual answer is survivable.\n\n3. Set a date — not to launch, but to decide.\nPick a date three months from now by which you will have made a decision. Decisions have a different gravity than intentions.`
+  };
+  sessionStore.set('fixture-test-session', session);
+  res.json({ ok: true });
+});
+
+// Serve static files last so all API routes take precedence.
+app.use(express.static(__dirname));
 
 // Export the app for Vercel's serverless runtime.
 // Vercel imports this module and handles HTTP — app.listen() is not called there.

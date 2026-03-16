@@ -79,6 +79,7 @@
       font-size: 12px;
       color: #666;
       font-family: monospace;
+      flex-shrink: 0;
     }
 
     #messages {
@@ -130,6 +131,85 @@
       margin-top: 4px;
       padding: 0 2px;
     }
+
+    /* ── Tab content ── */
+    #tab-content {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    #tab-content #messages {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── Tabs ── */
+    #tab-bar {
+      display: flex;
+      padding: 8px 20px 0;
+      background: white;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #666;
+      margin-right: 8px;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn.active {
+      border-bottom-color: #2c2416;
+      color: #2c2416;
+      font-weight: 600;
+    }
+
+    /* ── Synthesis Notes ── */
+    #synthesis-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .synth-empty {
+      color: #999;
+      font-style: italic;
+      padding: 20px 0;
+      font-size: 0.9rem;
+    }
+
+    .synth-section-header {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8b7355;
+      margin-top: 24px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #e8e0d0;
+      padding-bottom: 4px;
+    }
+
+    .synth-field {
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .synth-label {
+      font-weight: 600;
+      color: #444;
+      margin-right: 6px;
+    }
+
+    .synth-value { color: #222; }
   </style>
 </head>
 <body>
@@ -151,7 +231,7 @@
 
   async function loadSessions() {
     const list = document.getElementById('session-list');
-    list.innerHTML = '<div style="padding:16px;font-size:13px;color:#999">Loading…</div>';
+    list.innerHTML = '<div style="padding:16px;font-size:13px;color:#999">Loading...</div>';
 
     const res = await fetch(`${BASE}/admin/sessions`);
     const sessions = await res.json();
@@ -181,36 +261,147 @@
     });
   }
 
+  let activeTab = 'transcript';
+  let currentData = null;
+  let currentSessionId = null;
+  let currentMessageCount = 0;
+  let currentUserIdentifier = null;
+
   async function loadTranscript(sessionId, messageCount, userIdentifier) {
     const panel = document.getElementById('transcript');
-    panel.innerHTML = '<div style="padding:20px;font-size:13px;color:#999">Loading…</div>';
+    panel.innerHTML = '<div style="padding:20px;font-size:13px;color:#999">Loading...</div>';
 
     const res = await fetch(`${BASE}/admin/transcript/${sessionId}`);
-    const messages = await res.json();
+    const data = await res.json();
 
-    const visible = messages.filter(m => m.content !== '__START__');
+    currentData = data;
+    activeTab = 'transcript';
+    renderPanel(sessionId, messageCount, userIdentifier || data.userIdentifier);
+  }
+
+  function renderPanel(sessionId, messageCount, userIdentifier) {
+    currentSessionId = sessionId;
+    currentMessageCount = messageCount;
+    currentUserIdentifier = userIdentifier;
+
+    const panel = document.getElementById('transcript');
 
     const headerLabel = userIdentifier
-      ? `${escapeHtml(userIdentifier)} &nbsp;·&nbsp; ${sessionId}`
+      ? `${escapeHtml(userIdentifier)} &nbsp;&middot;&nbsp; ${sessionId}`
       : sessionId;
 
     panel.innerHTML = `
       <div id="transcript-header">
-        ${headerLabel} &nbsp;·&nbsp; ${messageCount} messages
+        ${headerLabel} &nbsp;&middot;&nbsp; ${messageCount} messages
       </div>
-      <div id="messages">
-        ${visible.map(m => `
-          <div class="msg-row ${m.role}">
-            <div class="bubble">${escapeHtml(m.content)}</div>
-            <div class="msg-time">
-              ${m.timestamp_display ?? ''}${m.input_tokens != null ? ` &nbsp;·&nbsp; ${m.input_tokens} in / ${m.output_tokens} out` : ''}
-            </div>
-          </div>
-        `).join('')}
+      <div id="tab-bar">
+        <button class="tab-btn ${activeTab === 'transcript' ? 'active' : ''}" data-tab="transcript">Transcript</button>
+        <button class="tab-btn ${activeTab === 'synthesis' ? 'active' : ''}" data-tab="synthesis">Synthesis Notes</button>
       </div>
+      <div id="tab-content"></div>
     `;
 
-    panel.querySelector('#messages').scrollTop = 0;
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchTab(btn.dataset.tab, currentSessionId, currentMessageCount, currentUserIdentifier);
+      });
+    });
+
+    renderTabContent();
+  }
+
+  function switchTab(tab, sessionId, messageCount, userIdentifier) {
+    activeTab = tab;
+    renderPanel(sessionId, messageCount, userIdentifier);
+  }
+
+  function renderTabContent() {
+    const container = document.getElementById('tab-content');
+    if (!container) return;
+
+    if (activeTab === 'transcript') {
+      const messages = currentData.messages || currentData;
+      const visible = messages.filter(m => m.content !== '__START__');
+      container.innerHTML = `
+        <div id="messages">
+          ${visible.map(m => `
+            <div class="msg-row ${m.role}">
+              <div class="bubble">${escapeHtml(m.content)}</div>
+              <div class="msg-time">
+                ${m.timestamp_display ?? ''}${m.input_tokens != null ? ` &nbsp;&middot;&nbsp; ${m.input_tokens} in / ${m.output_tokens} out` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      container.querySelector('#messages').scrollTop = 0;
+    } else {
+      console.log('[SYNTH] activeTab:', activeTab);
+      console.log('[SYNTH] currentData.extractionJson:', currentData.extractionJson ? 'present' : 'null');
+      container.innerHTML = `<div id="synthesis-panel">${renderSynthesisNotes(currentData.extractionJson)}</div>`;
+    }
+  }
+
+  function val(v) {
+    if (v == null || v === '') return '--';
+    if (Array.isArray(v)) return v.length ? v : null;
+    return v;
+  }
+
+  function field(label, value, format) {
+    const raw = val(value);
+    let display;
+    if (raw === '--') {
+      display = '--';
+    } else if (format === 'comma' && Array.isArray(raw)) {
+      display = raw.join(', ') || '--';
+    } else if (format === 'lines' && Array.isArray(raw)) {
+      display = raw.join('<br>') || '--';
+    } else {
+      display = escapeHtml(String(raw));
+    }
+    return `<div class="synth-field"><span class="synth-label">${label}:</span><span class="synth-value">${display}</span></div>`;
+  }
+
+  function renderSynthesisNotes(ex) {
+    console.log('[SYNTH] renderSynthesisNotes called with:', ex ? 'data present' : 'null');
+    if (!ex) return '<p class="synth-empty">Synthesis notes not available for this session.</p>';
+
+    const id = ex.identity_signals || {};
+    const cr = ex.current_reality || {};
+    const hp = ex.history_and_pattern || {};
+    const et = ex.emotional_texture || {};
+    const sp = ex.signal_phrases || [];
+
+    return `
+      <div class="synth-section-header">About This Person</div>
+      ${field('Self-descriptions', id.self_descriptions, 'comma')}
+      ${field('Roles', id.roles_mentioned, 'comma')}
+      ${field('Beliefs about self', id.implied_beliefs_about_self, 'lines')}
+
+      <div class="synth-section-header">Their Situation</div>
+      ${field('Life situation', cr.life_situation)}
+      ${field('What feels stuck', cr.what_feels_stuck)}
+      ${field('Significant asides', cr.significant_asides, 'lines')}
+
+      <div class="synth-section-header">History &amp; Pattern</div>
+      ${field('Previous attempts', hp.previous_attempts, 'lines')}
+      ${field('Recurring pattern', hp.recurring_pattern)}
+
+      <div class="synth-section-header">Emotional Texture</div>
+      ${field('Dominant tone', et.dominant_tone)}
+      ${field('Energy rises around', et.energy_rises_around, 'comma')}
+      ${field('Energy drops around', et.energy_drops_around, 'comma')}
+      ${field('Carrying', et.what_they_seem_to_be_carrying)}
+
+      <div class="synth-section-header">Signal Phrases</div>
+      ${sp.length ? sp.map(p => `<div class="synth-field synth-value">"${escapeHtml(String(p))}"</div>`).join('') : '<div class="synth-field synth-value">--</div>'}
+
+      <div class="synth-section-header">Goals</div>
+      ${field('Surface goal', ex.surface_goal)}
+      ${field('Real goal', ex.real_goal)}
+      ${field('Central tension', ex.central_tension)}
+    `;
   }
 
   function escapeHtml(str) {

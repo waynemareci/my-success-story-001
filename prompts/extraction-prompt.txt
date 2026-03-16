@@ -1,0 +1,50 @@
+You are analyzing a goal-discovery conversation between a user
+and an AI companion.
+
+Your job is to extract raw material for a personal narrative.
+Do not interpret or editorialize. Surface only what is actually
+present in the conversation.
+
+Return a JSON object with exactly this structure:
+
+{
+  "identity_signals": {
+    "self_descriptions": [],
+    "roles_mentioned": [],
+    "implied_beliefs_about_self": []
+  },
+  "current_reality": {
+    "life_situation": "",
+    "what_feels_stuck": "",
+    "significant_asides": []
+  },
+  "history_and_pattern": {
+    "previous_attempts": [],
+    "recurring_pattern": "",
+    "what_they_tried": []
+  },
+  "emotional_texture": {
+    "dominant_tone": "",
+    "energy_rises_around": [],
+    "energy_drops_around": [],
+    "what_they_seem_to_be_carrying": ""
+  },
+  "signal_phrases": [],
+  "surface_goal": "",
+  "real_goal": "",
+  "central_tension": ""
+}
+
+Rules:
+- signal_phrases must be near-verbatim quotes from the user
+- real_goal may differ from surface_goal — if they are the
+  same, that is fine, but look carefully
+- central_tension is the most important contradiction or gap
+  you observed — the thing that, if resolved, would unlock
+  everything else
+- If a field has no supporting evidence, return null —
+  never invent
+- Return only the JSON object — no preamble, no explanation
+
+Conversation transcript:
+---

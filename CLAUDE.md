@@ -369,9 +369,71 @@ adaptive feedback. Web-only. Anonymous sessions. No social features.
   package added; `OPENAI_API_KEY` added to `.env.example`. `stripMarkdown` extracted
   to server-level utility (shared by TTS endpoint).
 
+**Completed (Phase 0.1 — Mar 2026) — Synthesis backend implementation**:
+- Replaced system prompt with revised version: synthesis readiness instructions,
+  `%%SYNTHESIS_READY%%` and `%%STORY_CONFIRMED%%` marker protocol, six listening
+  dimensions, two-movement narrative structure.
+- Replaced welcome text with rebranded My Success Story version (no longer
+  references "Stef" or Wayne by name; explains story + Next Chapter deliverables).
+- Created `prompts/extraction-prompt.txt` — structured JSON extraction from
+  conversation transcript (identity signals, current reality, history/pattern,
+  emotional texture, signal phrases, surface/real goal, central tension).
+- Created `prompts/synthesis-prompt.txt` — four-section narrative writing prompt
+  (opening reframe, what came through, the thing worth naming, first-person close).
+- `%%SYNTHESIS_READY%%` detection in `/chat` handler: triggers `runSynthesisPipeline()`
+  server-side; Claude's own synthesis attempt is discarded in favour of pipeline output.
+  Graceful fallback (strips marker, returns preamble text) if pipeline throws.
+- `runSynthesisPipeline(sessionId, messages)`: calls extraction model
+  (`claude-sonnet-4-20250514`, max 2048 tokens) with full transcript; parses JSON
+  (strips markdown fences); calls synthesis model (same, max 1024 tokens) with
+  pretty-printed extraction data; stores both results on `sessionStore`.
+- `%%STORY_CONFIRMED%%` detection: strips marker from displayed text, sets
+  `session.storyConfirmed = true`, stores `session.confirmedNarrative` from
+  `session.pendingNarrative`. Logs confirmation with session ID.
+- In-memory `sessionStore` (Map) keyed by `sessionId` persists extraction JSON,
+  pending narrative, and confirmed story for future Next Chapter / PDF tasks.
+- Supabase logging fix (same deploy): `await`ed the insert in `/chat` so Vercel
+  serverless doesn't freeze the function before the write completes.
+
+**Completed (Phase 0.1 — Mar 2026) — Next Chapter, frontend state, and PDF**:
+- Created `prompts/next-chapter-prompt.txt` — generates 2–3 specific first moves from
+  confirmed narrative + extraction JSON; ends with `%%CHAPTER_CONFIRMED%%` marker.
+- Added `CHAPTER_CONFIRMED_MARKER` constant.
+- Loaded `next-chapter-prompt.txt` at startup alongside extraction/synthesis prompts.
+- Added `session.extractionJson` alias in `runSynthesisPipeline` (alongside `extractionData`).
+- Added `runNextChapterPipeline(sessionId, confirmedNarrative, extractionJson)` —
+  calls `claude-sonnet-4-20250514` with the next-chapter prompt + actual inputs.
+- Extended `%%STORY_CONFIRMED%%` detection to trigger `runNextChapterPipeline`; stores
+  `session.nextChapter`; appends Next Chapter text to the confirmed reply.
+- Added `%%CHAPTER_CONFIRMED%%` detection — strips marker, sets `session.chapterConfirmed`.
+- Added `GET /session/:sessionId` — returns `{ storyConfirmed, chapterConfirmed,
+  hasNarrative, hasNextChapter }` from in-memory session store.
+- Added `GET /download-pdf/:sessionId` — generates a two-page Letter PDF using
+  `pdfkit`: Page 1 "MY SUCCESS STORY" (narrative), Page 2 "MY NEXT CHAPTER".
+  Filename: `my-success-story.pdf`. `pdfkit` added to `prototype/package.json`.
+- Frontend (`index.html`):
+  - Added `classifyMsg(msg, index, visibleMsgs)` helper — classifies assistant messages
+    as `'synthesis'` (length > 400, starts with "You "), `'next-chapter'` (follows
+    synthesis, contains numbered actions), or `null`.
+  - Added parchment card CSS (`.narrative-card`, `.narrative-card-header`, `.download-btn`).
+  - Added `sessionState` state; `fetchSessionState()` called after each assistant reply.
+  - Message render loop replaced with classified renderer: synthesis → MY SUCCESS STORY
+    card; next-chapter → MY NEXT CHAPTER card + conditional download button.
+  - Download button (`Download My Story (PDF)`) appears below the last Next Chapter
+    card only when `sessionState.chapterConfirmed` is true.
+
+**Completed (Phase 0.1 — Mar 2026) — Debug Test Fixture**:
+- Added `FIXTURE_MESSAGES` and `FIXTURE_SESSION_STATE` constants to `index.html`
+- Added "Inject Test Conversation" button to debug overlay (visible only at `?debug=true`)
+- `injectFixture()` handler sets messages, sessionId, awaitingName, and sessionState
+  directly in React state — no API calls, no Supabase writes
+- `fetchSessionState` guards against polling when `sessionId === 'fixture-test-session'`
+- Allows immediate testing of parchment card rendering, Next Chapter display, and PDF
+  download button without conducting a real conversation
+
 **Next steps**:
 - Continue gathering tester feedback
-- Iterate on system prompt based on conversation quality
+- Deploy to Vercel and run end-to-end test conversation through all three stages
 
 ---
 
@@ -417,6 +479,16 @@ Strategy Facilitator/
 ---
 
 ## Change Log
+
+### Admin Synthesis Notes Display
+- Extended GET /admin/transcript/:sessionId to return extractionJson and userIdentifier
+  from users table
+- Added Transcript / Synthesis Notes tab toggle to admin.html session detail view
+- Synthesis Notes tab displays extraction JSON as formatted labeled sections
+
+### Extraction JSON Persistence
+- Added Supabase update to store extraction_json in users table after extraction
+  completes in runSynthesisPipeline
 
 > Step 3 complete — Voice input layer added. Mic button in footer wires Web Speech API
 > to textarea. Graceful hide on unsupported browsers. Send logic untouched.
