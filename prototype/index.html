@@ -321,6 +321,8 @@
       }
 
       function App() {
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
         const [messages, setMessages] = useState([]);
         const [input, setInput] = useState("");
         const [loading, setLoading] = useState(false);
@@ -353,7 +355,7 @@
         const [voiceMode, setVoiceMode] = useState(false);
         const [isSpeaking, setIsSpeaking] = useState(false);
         const [synthSupported, setSynthSupported] = useState(false);
-        const [voiceStarted, setVoiceStarted] = useState(false);
+        const [voiceStarted, setVoiceStarted] = useState(!isMobile);
         const voiceModeRef = useRef(false);
         const pendingStopRef = useRef(false);
         const activeSpeechIdRef = useRef(null);

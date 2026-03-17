@@ -480,6 +480,11 @@ Strategy Facilitator/
 
 ## Change Log
 
+### Mobile-only tap-to-start overlay
+- Tap-to-start overlay now only shown on mobile devices (Android/iPhone/iPad)
+- Desktop users bypass overlay and enter conversation directly on page load
+- Mobile behavior and voice warm-up logic unchanged
+
 ### Supabase session persistence
 - Replaced in-memory sessionStore Map with Supabase-backed session persistence
 - Added getSession() and saveSession() async helpers wrapping the `sessions` table
