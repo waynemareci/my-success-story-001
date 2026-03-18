@@ -480,10 +480,17 @@ Strategy Facilitator/
 
 ## Change Log
 
-### Mobile-only tap-to-start overlay
-- Tap-to-start overlay now only shown on mobile devices (Android/iPhone/iPad)
-- Desktop users bypass overlay and enter conversation directly on page load
+### Desktop first-turn mic prompt
+- Desktop users see an instructional message prompting them to click the mic button
+- First mic click unlocks Chrome autoplay policy and dismisses the message
+- All subsequent turns on desktop are fully hands-free
+- Mobile overlay behavior unchanged
+
+### Mobile-only tap-to-start overlay with automatic desktop initialization
+- Tap-to-start overlay now only shown on mobile devices (Android/iPhone/iPad/iOS)
+- Desktop users bypass overlay; first mic click initializes voice (no auto-start)
 - Mobile behavior and voice warm-up logic unchanged
+- Extracted session initialization into named initializeSession() function
 
 ### Supabase session persistence
 - Replaced in-memory sessionStore Map with Supabase-backed session persistence

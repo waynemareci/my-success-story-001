@@ -356,6 +356,10 @@
         const [isSpeaking, setIsSpeaking] = useState(false);
         const [synthSupported, setSynthSupported] = useState(false);
         const [voiceStarted, setVoiceStarted] = useState(!isMobile);
+        // desktopUnlocked: false until the first mic click on desktop (used to unlock
+        // Chrome's autoplay policy via a user gesture). Always true on mobile because
+        // the overlay tap serves as the gesture.
+        const [desktopUnlocked, setDesktopUnlocked] = useState(isMobile);
         const voiceModeRef = useRef(false);
         const pendingStopRef = useRef(false);
         const activeSpeechIdRef = useRef(null);
@@ -669,6 +673,7 @@
 
           dbg('startReceiveMode called');
           receiveModeRef.current = true;
+          setVoiceMode(true);
           setReceiveMode(true);
           accumulatedTranscriptRef.current = '';
           setInput('');
@@ -852,6 +857,22 @@
           });
         };
 
+        // Called by the mobile overlay tap. On desktop this is not called
+        // (startReceiveMode is triggered automatically via useEffect instead).
+        const initializeSession = () => {
+          if (window.speechSynthesis) {
+            const u = new SpeechSynthesisUtterance('a');
+            u.volume = 0;
+            u.rate = 10;
+            window.speechSynthesis.speak(u);
+          }
+          dbg('initializeSession called');
+          setVoiceStarted(true);
+          const utterance = new SpeechSynthesisUtterance('');
+          window.speechSynthesis.speak(utterance);
+          if (speechSupported) startReceiveMode();
+        };
+
         const startListening = () => {
           if (receiveModeRef.current) {
             handsFreeRef.current = false;
@@ -870,13 +891,16 @@
               window.speechSynthesis.cancel();
               setIsSpeaking(false);
             }
-            // Unlock TTS on first use (this click IS a user gesture)
-            if (!voiceStarted && window.speechSynthesis) {
+            // Unlock TTS on first use (this click IS a user gesture).
+            // On mobile voiceStarted is false until overlay tap; on desktop
+            // desktopUnlocked is false until the first mic click.
+            if ((!voiceStarted || !desktopUnlocked) && window.speechSynthesis) {
               const u = new SpeechSynthesisUtterance('a');
               u.volume = 0;
               u.rate = 10;
               window.speechSynthesis.speak(u);
               setVoiceStarted(true);
+              setDesktopUnlocked(true);
             }
             startReceiveMode();
           }
@@ -1022,20 +1046,7 @@
 
             {!voiceStarted && (
               <div
-                onClick={() => {
-                  if (window.speechSynthesis) {
-                    const u = new SpeechSynthesisUtterance('a');
-                    u.volume = 0;
-                    u.rate = 10;
-                    window.speechSynthesis.speak(u);
-                  }
-                  dbg('Overlay tapped, calling startReceiveMode');
-                  setVoiceStarted(true);
-                  dbg('SS warmup utterance fired');
-                  const utterance = new SpeechSynthesisUtterance('');
-                  window.speechSynthesis.speak(utterance);
-                  if (speechSupported) startReceiveMode();
-                }}
+                onClick={initializeSession}
                 style={{
                   position: "fixed", inset: 0, zIndex: 50,
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -1075,6 +1086,18 @@
               <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px 8px", fontSize: "12px", color: "#6c757d" }}>
                 <span className="speaking-dot" />
                 <span>Speaking…</span>
+              </div>
+            )}
+
+            {!isMobile && !desktopUnlocked && speechSupported && (
+              <div style={{
+                textAlign: "center",
+                padding: "0 20px 8px",
+                fontSize: "12px",
+                color: "#8b7355",
+                letterSpacing: "0.01em",
+              }}>
+                Click the mic button to interact using your voice; otherwise, type in your side of the conversation
               </div>
             )}
 
