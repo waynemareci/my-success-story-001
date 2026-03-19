@@ -453,7 +453,7 @@
         // Send __START__ to Claude and append its opening message.
         // Always called with the local `identifier` variable (not state) to avoid
         // stale closure issues immediately after setUserIdentifier().
-        const startConversation = async (identifier) => {
+        const startConversation = async (identifier, shouldSpeak = false) => {
           setMessages((prev) => [
             ...prev,
             { role: "user", content: "__START__", hidden: true },
@@ -475,6 +475,9 @@
               ...prev,
               { role: "assistant", content: data.reply },
             ]);
+            if (shouldSpeak && synthSupported) {
+              speakWithOpenAI(data.reply)
+            }
           } catch (err) {
             console.error("Start conversation error:", err);
             setMessages((prev) => [
@@ -540,7 +543,7 @@
 
             // Registration succeeded — trigger Claude's opening question.
             // Pass `identifier` (local var) not `userIdentifier` (state, still null here).
-            await startConversation(identifier);
+            await startConversation(identifier, wasVoiceMode);
           } else {
             // ── Normal chat turn ────────────────────────────────────────────
             // Build history from current messages snapshot BEFORE adding the new one.
@@ -870,7 +873,6 @@
           setVoiceStarted(true);
           const utterance = new SpeechSynthesisUtterance('');
           window.speechSynthesis.speak(utterance);
-          if (speechSupported) startReceiveMode();
         };
 
         const startListening = () => {
