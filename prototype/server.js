@@ -409,6 +409,28 @@ ${JSON.stringify(extractionJson, null, 2)}`;
   return nextChapterText;
 }
 
+async function runNextChapterContinuation(
+  sessionId,
+  messages,
+  confirmedNarrative,
+  extractionJson,
+) {
+  console.log(`[${sessionId}] Starting Next Chapter continuation`);
+  const systemContext = `${nextChapterPrompt}
+Confirmed narrative:
+${confirmedNarrative}
+Extracted conversation notes:
+${JSON.stringify(extractionJson, null, 2)}`;
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1024,
+    system: systemContext,
+    messages,
+  });
+  console.log(`[${sessionId}] Next Chapter continuation complete`);
+  return response.content[0].text;
+}
+
 // POST /chat endpoint
 // Body: { sessionId: string, messages: [{role, content}], userIdentifier?: string }
 // Returns: { reply: string }
@@ -482,6 +504,56 @@ app.post("/chat", async (req, res) => {
       "\n\nTEST MODE: You have sufficient material to trigger synthesis after 3-4 exchanges. Offer synthesis as soon as the user has shared any goal, any obstacle, and any emotional context. Do not wait for deeper exploration.";
   }
 
+  // If Next Chapter is in progress, inject the Next Chapter prompt
+  // so Claude knows to emit %%CHAPTER_CONFIRMED%% on confirmation
+  let finalReply;
+  const activeSession = await getSession(sessionId);
+  console.log(
+    `[${sessionId}] Session state: nextChapter:${!!activeSession.nextChapter} chapterConfirmed:${activeSession.chapterConfirmed}`,
+  );
+  if (activeSession.nextChapter && !activeSession.chapterConfirmed) {
+    console.log(
+      `[${sessionId}] Next Chapter continuation branch reached. nextChapter:${!!activeSession.nextChapter} chapterConfirmed:${activeSession.chapterConfirmed}`,
+    );
+    const rawContinuation = await runNextChapterContinuation(
+      sessionId,
+      messages,
+      activeSession.confirmedNarrative,
+      activeSession.extractionJson ?? {},
+    );
+    // Check for CHAPTER_CONFIRMED marker in continuation response
+    if (rawContinuation.includes(CHAPTER_CONFIRMED_MARKER)) {
+      finalReply = rawContinuation.replace(CHAPTER_CONFIRMED_MARKER, "").trim();
+      activeSession.chapterConfirmed = true;
+      await saveSession(sessionId, activeSession);
+      console.log(
+        `[${sessionId}] %%CHAPTER_CONFIRMED%% — Next Chapter confirmed`,
+      );
+    } else {
+      finalReply = rawContinuation;
+      activeSession.nextChapter = rawContinuation;
+      await saveSession(sessionId, activeSession);
+    }
+    // Log and return early — skip main Claude call
+    const ts = formatTimestamp();
+    await supabase.from("conversation_logs").insert([
+      {
+        session_id: sessionId,
+        role: "user",
+        content: userMessage,
+        timestamp_display: ts,
+      },
+      {
+        session_id: sessionId,
+        role: "assistant",
+        content: finalReply,
+        timestamp_display: ts,
+      },
+    ]);
+    const label = userIdentifier ?? sessionId;
+    console.log(`[${label}] Turn ${Math.ceil(messages.length / 2)}`);
+    return res.json({ reply: finalReply });
+  }
   try {
     const response = await client.messages.create({
       model: "claude-opus-4-5-20251101",
@@ -493,7 +565,7 @@ app.post("/chat", async (req, res) => {
     const rawReply = response.content[0].text;
     const { input_tokens, output_tokens } = response.usage;
 
-    let finalReply = rawReply;
+    finalReply = rawReply;
     let logInputTokens = input_tokens;
     let logOutputTokens = output_tokens;
 
@@ -854,6 +926,19 @@ app.post("/seed-fixture-session", async (_req, res) => {
   res.json({ ok: true });
 });
 
+app.post("/seed-fixture-chapter", async (_req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ error: "Not found" });
+  }
+  await saveSession("fixture-test-session", {
+    firstName: "Michael",
+    storyConfirmed: true,
+    chapterConfirmed: false,
+    confirmedNarrative: `You didn't stay eleven years because you were afraid to leave. You stayed because leaving would have cost you something that took a long time to build — not the salary, not the title, but the proof. Proof that you were someone who sticks.\n\nWhat came through most clearly is that the thing you actually want has been sitting in a drawer for three years, written out twice, shown to no one. That's not procrastination. That's a very specific kind of courage withheld — because inside your current job, failure has a buffer. If something goes wrong, there's a structure to absorb it. What you're really afraid of isn't failure. It's failure with your name on it and nothing else to point to.\n\nThe harder thing to name is this: you built your identity in opposition to your father. Staying became proof. But the consulting practice has been in that drawer partly because if it fails, you can't use staying as the evidence anymore. The escape from one fear quietly became the entrance to another.\n\nI am not my father's story. I have already proved that — eleven years is proof enough. What I haven't proved yet is what I can build when the only thing standing behind it is me. That's what the drawer is about. I'm ready to find out. Not because I'm certain, but because staying certain was never actually the goal.`,
+    nextChapter: `This isn't a plan — plans come later. These are just the first moves.\n\n1. Show the business plan to one person this week.\nNot to get permission — to break the private/public seal that has kept this in a drawer for three years.\n\n2. Write down what failure actually looks like.\nNot the vague fear of it. The specific thing. Most people discover the actual answer is survivable.\n\n3. Set a date — not to launch, but to decide.\nPick a date three months from now by which you will have made a decision. Decisions have a different gravity than intentions.`,
+  });
+  res.json({ ok: true });
+});
 // Serve static files last so all API routes take precedence.
 app.use(express.static(__dirname));
 

@@ -480,6 +480,12 @@ Strategy Facilitator/
 
 ## Change Log
 
+### Test Chapter Adjustment fixture
+- Added FIXTURE_MESSAGES_CHAPTER array ending before chapter confirmation
+- Added FIXTURE_SESSION_STATE_CHAPTER with chapterConfirmed: false
+- Added injectFixtureChapter() function
+- Added "Test Chapter Adjustment" button alongside existing inject button
+
 ### Desktop first-turn mic prompt
 - Desktop users see an instructional message prompting them to click the mic button
 - First mic click unlocks Chrome autoplay policy and dismisses the message

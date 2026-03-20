@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "build": "node -e \"const fs=require('fs');const sw=fs.readFileSync('sw.js','utf8');fs.writeFileSync('sw.js',sw.replace('__BUILD_TIMESTAMP__','v'+Date.now()))\"",
-    "dev": "node --watch server.js",
+    "_old_dev": "node --watch server.js",
+    "dev": "nodemon server.js",
     "test": "cross-env MOCK_MODE=true node --watch server.js",
     "test-mode": "cross-env TEST_MODE=true node server.js"
   },

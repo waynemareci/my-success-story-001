@@ -282,6 +282,17 @@
         hasNextChapter: true,
       };
 
+      // Chapter adjustment fixture — identical to FIXTURE_MESSAGES but ends before
+      // the user's confirmation so the chapter adjustment flow can be tested.
+      const FIXTURE_MESSAGES_CHAPTER = FIXTURE_MESSAGES.slice(0, -1);
+
+      const FIXTURE_SESSION_STATE_CHAPTER = {
+        storyConfirmed: true,
+        chapterConfirmed: false,
+        hasNarrative: true,
+        hasNextChapter: true,
+      };
+
       const FLOOD_SCRIPT = [
         "My name is TestUser",
         "I want to start my own business but I keep putting it off",
@@ -576,7 +587,7 @@
                 ...prev,
                 { role: "assistant", content: data.reply },
               ]);
-              fetchSessionState();
+              setTimeout(() => fetchSessionState(), 500);
               if (wasVoiceMode && synthSupported) {
                 speakWithOpenAI(data.reply);
               }
@@ -597,10 +608,12 @@
         };
         // Fetch current session state flags from the server (storyConfirmed, chapterConfirmed, etc.)
         const fetchSessionState = async () => {
-          if (sessionId === 'fixture-test-session') return;
           try {
             const r = await fetch(`${BASE}/session/${sessionId}`);
-            if (r.ok) setSessionState(await r.json());
+            if (r.ok) {
+              const data = await r.json();
+              setSessionState(data);
+            }
           } catch (_) {}
         };
 
@@ -632,6 +645,18 @@
           setSessionId('fixture-test-session');
           setAwaitingName(false);
           setSessionState(FIXTURE_SESSION_STATE);
+        };
+
+        const injectFixtureChapter = async () => {
+          try {
+            await fetch('/seed-fixture-chapter', { method: 'POST' });
+          } catch (err) {
+            console.error('Failed to seed fixture session:', err);
+          }
+          setMessages(FIXTURE_MESSAGES_CHAPTER);
+          setSessionId('fixture-test-session');
+          setAwaitingName(false);
+          setSessionState(FIXTURE_SESSION_STATE_CHAPTER);
         };
 
         useEffect(() => {
@@ -1182,6 +1207,14 @@
                     fontSize: "0.85rem", cursor: "pointer", margin: "8px 0",
                   }}
                 >Inject Test Conversation</button>
+                <button
+                  onClick={injectFixtureChapter}
+                  style={{
+                    background: "#f59e0b", color: "#1c1c1c", border: "none",
+                    borderRadius: "6px", padding: "8px 16px",
+                    fontSize: "0.85rem", cursor: "pointer", margin: "8px 0",
+                  }}
+                >Test Chapter Adjustment</button>
                 <button
                   onClick={() => setDebugOpen(o => !o)}
                   style={{
