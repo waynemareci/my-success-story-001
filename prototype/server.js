@@ -508,13 +508,7 @@ app.post("/chat", async (req, res) => {
   // so Claude knows to emit %%CHAPTER_CONFIRMED%% on confirmation
   let finalReply;
   const activeSession = await getSession(sessionId);
-  console.log(
-    `[${sessionId}] Session state: nextChapter:${!!activeSession.nextChapter} chapterConfirmed:${activeSession.chapterConfirmed}`,
-  );
   if (activeSession.nextChapter && !activeSession.chapterConfirmed) {
-    console.log(
-      `[${sessionId}] Next Chapter continuation branch reached. nextChapter:${!!activeSession.nextChapter} chapterConfirmed:${activeSession.chapterConfirmed}`,
-    );
     const rawContinuation = await runNextChapterContinuation(
       sessionId,
       messages,
