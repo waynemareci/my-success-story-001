@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
 import DebugOverlay from './components/DebugOverlay';
+import NarrativeCard from './components/NarrativeCard';
+import NextChapterCard from './components/NextChapterCard';
+import VoiceOverlay from './components/VoiceOverlay';
 
 const BASE = window.location.origin;
 const isTestMode =
@@ -694,6 +697,7 @@ function App() {
     setVoiceStarted(true);
     const utterance = new SpeechSynthesisUtterance("");
     window.speechSynthesis.speak(utterance);
+    if (speechSupported) startReceiveMode(); 
   };
 
   const startListening = () => {
@@ -824,77 +828,17 @@ function App() {
           return visible.map((msg, i) => {
             const type = classifyMsg(msg);
             if (type === "synthesis") {
-              const paragraphs = msg.content.split("\n\n");
-              const closeIdx = paragraphs.findIndex((p) =>
-                /^I[' \w]/.test(p.trimStart()),
-              );
-              const beforeParas =
-                closeIdx >= 0
-                  ? paragraphs.slice(0, closeIdx)
-                  : paragraphs;
-              const closePara =
-                closeIdx >= 0 ? paragraphs[closeIdx] : null;
-              const afterParas =
-                closeIdx >= 0 ? paragraphs.slice(closeIdx + 1) : [];
-              return (
-                <div key={i} className="narrative-card">
-                  <div className="narrative-card-header">
-                    My Success Story
-                  </div>
-                  {beforeParas.map((p, pi) => (
-                    <p key={pi} style={{ margin: "0 0 14px 0" }}>
-                      {p}
-                    </p>
-                  ))}
-                  {closePara && (
-                    <div
-                      style={{
-                        borderTop: "1px solid #d4c5a9",
-                        marginTop: "20px",
-                        paddingTop: "20px",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      {"\u201c"}
-                      {closePara}
-                      {"\u201d"}
-                    </div>
-                  )}
-                  {afterParas.map((p, pi) => (
-                    <p
-                      key={`after-${pi}`}
-                      style={{ margin: "14px 0 0 0" }}
-                    >
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              );
+              return <NarrativeCard key={i} content={msg.content} />;
             }
             if (type === "next-chapter") {
               return (
-                <div key={i}>
-                  <div className="narrative-card">
-                    <div className="narrative-card-header">
-                      My Next Chapter
-                    </div>
-                    {msg.content}
-                  </div>
-                  {i === lastNextChapterIdx &&
-                    sessionState.chapterConfirmed && (
-                      <button
-                        className="download-btn"
-                        onClick={() =>
-                          window.open(
-                            `${BASE}/getpdf/${sessionId}`,
-                            "_blank",
-                          )
-                        }
-                      >
-                        Download My Story (PDF)
-                      </button>
-                    )}
-                </div>
+                <NextChapterCard
+                  key={i}
+                  content={msg.content}
+                  showDownload={i === lastNextChapterIdx && sessionState.chapterConfirmed}
+                  sessionId={sessionId}
+                  base={BASE}
+                />
               );
             }
             return (
@@ -908,47 +852,7 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      {!voiceStarted && (
-        <div
-          onClick={initializeSession}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 50,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#0d0d1a",
-            cursor: "pointer",
-            userSelect: "none",
-          }}
-        >
-          <div style={{ textAlign: "center", padding: "0 32px" }}>
-            <h1
-              style={{
-                fontSize: "clamp(26px, 6vw, 38px)",
-                fontWeight: 700,
-                color: "white",
-                marginBottom: "20px",
-                letterSpacing: "-0.5px",
-              }}
-            >
-              My Success Story
-            </h1>
-            <p
-              className="overlay-hint"
-              style={{
-                fontSize: "16px",
-                fontWeight: 400,
-                color: "rgba(255,255,255,0.7)",
-                margin: 0,
-              }}
-            >
-              Tap to begin your session
-            </p>
-          </div>
-        </div>
-      )}
+      <VoiceOverlay voiceStarted={voiceStarted} onTap={initializeSession} />
       {receiveMode && !loading && !isSpeaking && (
         <div
           style={{
