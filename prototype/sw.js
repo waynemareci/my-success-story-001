@@ -1,4 +1,4 @@
-const CACHE_VERSION = '__BUILD_TIMESTAMP__';
+const CACHE_VERSION = 'v1774198099597';
 const CACHE_NAME = `app-shell-${CACHE_VERSION}`;
 
 const APP_SHELL = [

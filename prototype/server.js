@@ -961,7 +961,7 @@ app.post("/seed-fixture-chapter", async (_req, res) => {
   res.json({ ok: true });
 });
 // Serve static files last so all API routes take precedence.
-app.use(express.static(__dirname));
+app.use(express.static(join(__dirname, 'dist')));
 
 // Export the app for Vercel's serverless runtime.
 // Vercel imports this module and handles HTTP — app.listen() is not called there.

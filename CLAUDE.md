@@ -521,6 +521,15 @@ Strategy Facilitator/
 - Added Supabase update to store extraction_json in users table after extraction
   completes in runSynthesisPipeline
 
+### DebugOverlay component extraction
+- Extracted inline `{debugMode && (...)}` block (was lines 1372–1452) from `index.html`
+  into a standalone `DebugOverlay` function component defined above `App` in the same
+  `<script type="text/babel">` block
+- Reference copy saved at `prototype/src/components/DebugOverlay.jsx`
+- Props: `debugOpen`, `setDebugOpen`, `debugLog`, `injectFixture`, `injectFixtureChapter`
+- Component self-guards with `if (!debugMode) return null`; caller uses `<DebugOverlay ... />`
+  unconditionally (no wrapper condition needed at call site)
+
 > Step 3 complete — Voice input layer added. Mic button in footer wires Web Speech API
 > to textarea. Graceful hide on unsupported browsers. Send logic untouched.
 

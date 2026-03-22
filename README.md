@@ -35,7 +35,7 @@ This is a **disposable prototype** deployed on Vercel to gather feedback from te
 ## Project Structure
 
 ```
-MySuccessStory000/
+MySuccessStory001/
 ├── .amazonq/rules/          # Amazon Q context files
 ├── prototype/               # Phase 0 throwaway code
 │   ├── server.js           # Express server

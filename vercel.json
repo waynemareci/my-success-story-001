@@ -7,7 +7,7 @@
       "config": {
         "buildCommand": "cd prototype && npm run build",
         "includeFiles": [
-          "prototype/index.html",
+          "prototype/dist/**",
           "prototype/admin.html",
           "prototype/sw.js",
           "prototype/public/manifest.json",
