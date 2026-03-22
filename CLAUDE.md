@@ -480,6 +480,13 @@ Strategy Facilitator/
 
 ## Change Log
 
+### Server-side message type tagging
+- Replaced fragile content-based classifyMsg() with explicit messageType field returned by /chat endpoint
+- Server tags responses as 'synthesis', 'next-chapter', or 'chat'
+- Client stores messageType alongside message content
+- classifyMsg() simplified to direct messageType lookup
+- Eliminates edge cases from pattern matching on message length and content
+
 ### Test Chapter Adjustment fixture
 - Added FIXTURE_MESSAGES_CHAPTER array ending before chapter confirmation
 - Added FIXTURE_SESSION_STATE_CHAPTER with chapterConfirmed: false

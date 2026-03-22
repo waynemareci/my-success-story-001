@@ -489,7 +489,7 @@ app.post("/chat", async (req, res) => {
     // Simulate realistic API latency so loading states can be tested
     await new Promise((r) => setTimeout(r, 700));
 
-    return res.json({ reply });
+    return res.json({ reply, messageType: "chat" });
   }
 
   // Personalize system prompt with first name if available
@@ -508,7 +508,20 @@ app.post("/chat", async (req, res) => {
   // so Claude knows to emit %%CHAPTER_CONFIRMED%% on confirmation
   let finalReply;
   const activeSession = await getSession(sessionId);
-  if (activeSession.nextChapter && !activeSession.chapterConfirmed) {
+  const lastAssistantMessage = messages
+    .filter((m) => m.role === "assistant")
+    .pop();
+  const nextChapterAlreadyShown =
+    lastAssistantMessage &&
+    activeSession.nextChapter &&
+    lastAssistantMessage.content.includes(
+      activeSession.nextChapter.slice(0, 50),
+    );
+  if (
+    activeSession.nextChapter &&
+    !activeSession.chapterConfirmed &&
+    nextChapterAlreadyShown
+  ) {
     const rawContinuation = await runNextChapterContinuation(
       sessionId,
       messages,
@@ -516,6 +529,7 @@ app.post("/chat", async (req, res) => {
       activeSession.extractionJson ?? {},
     );
     // Check for CHAPTER_CONFIRMED marker in continuation response
+    let continuationMessageType;
     if (rawContinuation.includes(CHAPTER_CONFIRMED_MARKER)) {
       finalReply = rawContinuation.replace(CHAPTER_CONFIRMED_MARKER, "").trim();
       activeSession.chapterConfirmed = true;
@@ -523,10 +537,15 @@ app.post("/chat", async (req, res) => {
       console.log(
         `[${sessionId}] %%CHAPTER_CONFIRMED%% — Next Chapter confirmed`,
       );
+      continuationMessageType = "chat";
     } else {
       finalReply = rawContinuation;
-      activeSession.nextChapter = rawContinuation;
-      await saveSession(sessionId, activeSession);
+      // Only update nextChapter if the response contains numbered actions
+      if (/\n\s*\d+\./.test(rawContinuation)) {
+        activeSession.nextChapter = rawContinuation;
+        await saveSession(sessionId, activeSession);
+      }
+      continuationMessageType = "next-chapter";
     }
     // Log and return early — skip main Claude call
     const ts = formatTimestamp();
@@ -546,7 +565,10 @@ app.post("/chat", async (req, res) => {
     ]);
     const label = userIdentifier ?? sessionId;
     console.log(`[${label}] Turn ${Math.ceil(messages.length / 2)}`);
-    return res.json({ reply: finalReply });
+    return res.json({
+      reply: finalReply,
+      messageType: continuationMessageType,
+    });
   }
   try {
     const response = await client.messages.create({
@@ -562,6 +584,7 @@ app.post("/chat", async (req, res) => {
     finalReply = rawReply;
     let logInputTokens = input_tokens;
     let logOutputTokens = output_tokens;
+    let messageType = "chat";
 
     if (rawReply.includes(SYNTHESIS_MARKER)) {
       // %%SYNTHESIS_READY%% detected — run the two-prompt extraction + synthesis pipeline.
@@ -572,6 +595,7 @@ app.post("/chat", async (req, res) => {
       try {
         finalReply = await runSynthesisPipeline(sessionId, messages);
         if (typeof finalReply === "string") finalReply = finalReply.trim();
+        messageType = "synthesis";
       } catch (err) {
         console.error(
           `[${sessionId}] Synthesis pipeline failed, using graceful fallback:`,
@@ -581,6 +605,7 @@ app.post("/chat", async (req, res) => {
         finalReply =
           rawReply.split(SYNTHESIS_MARKER)[0].trim() ||
           "I have everything I need to write your story. Give me just a moment...";
+        // messageType stays 'chat' — fallback text is not a real synthesis narrative
       }
     } else if (rawReply.includes(STORY_CONFIRMED_MARKER)) {
       // Always strip the marker from the reply
@@ -600,6 +625,7 @@ app.post("/chat", async (req, res) => {
           );
           session.nextChapter = nextChapterText;
           finalReply = nextChapterText;
+          messageType = "next-chapter";
         } catch (err) {
           console.error(
             `[${sessionId}] Next Chapter pipeline failed:`,
@@ -624,6 +650,7 @@ app.post("/chat", async (req, res) => {
           `[${sessionId}] %%CHAPTER_CONFIRMED%% — Next Chapter confirmed`,
         );
       }
+      // messageType stays 'chat'
     }
 
     // Log to Supabase — awaited so Vercel doesn't freeze the function before the write completes
@@ -651,7 +678,7 @@ app.post("/chat", async (req, res) => {
     const label = userIdentifier ?? sessionId;
     console.log(`[${label}] Turn ${Math.ceil(messages.length / 2)}`);
 
-    res.json({ reply: finalReply });
+    res.json({ reply: finalReply, messageType });
   } catch (err) {
     console.error("Claude API error:", err.message);
     res.status(500).json({ error: "Failed to get response from Claude" });

@@ -7,14 +7,27 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>My Success Story</title>
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#6c3fc5">
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Success">
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#6c3fc5" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/icons/icon-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/icons/icon-512x512.png"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Success" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <script
       crossorigin
       src="https://unpkg.com/react@18/umd/react.development.js"
@@ -160,16 +173,26 @@
       }
 
       @keyframes mic-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.45); }
-        50%       { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.45);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);
+        }
       }
       .mic-listening {
         animation: mic-pulse 1.2s ease-in-out infinite;
       }
 
       @keyframes speaking-pulse {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0.25; }
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.25;
+        }
       }
       .speaking-dot {
         display: inline-block;
@@ -182,16 +205,26 @@
       }
 
       @keyframes receive-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
-        50%       { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+        }
       }
       .mic-receiving {
         animation: receive-pulse 1.5s ease-in-out infinite;
       }
 
       @keyframes overlay-pulse {
-        0%, 100% { opacity: 0.5; }
-        50%       { opacity: 1; }
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
       }
       .overlay-hint {
         animation: overlay-pulse 2.2s ease-in-out infinite;
@@ -220,7 +253,10 @@
         color: #8b7355;
         text-transform: uppercase;
         margin-bottom: 16px;
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
       }
 
       .download-btn {
@@ -254,25 +290,48 @@
         new URLSearchParams(window.location.search).get("debug") === "true";
 
       const FIXTURE_MESSAGES = [
-        { role: 'user', content: 'I keep thinking I should leave my job.' },
-        { role: 'assistant', content: 'How long have you been thinking about that?' },
-        { role: 'user', content: 'About seven years. The money is good but I dread Mondays.' },
-        { role: 'assistant', content: 'What would leaving feel like?' },
-        { role: 'user', content: 'Relief. But also guilt — like throwing away something that took a long time to build.' },
-        { role: 'assistant', content: 'What did you build there?' },
-        { role: 'user', content: 'Security. And proof. Proof I could stick with something. My father never held a job for more than two years.' },
-        { role: 'assistant', content: 'I think I have enough to tell your story. Ready to see it?' },
-        { role: 'user', content: 'Yes.' },
+        { role: "user", content: "I keep thinking I should leave my job." },
         {
-          role: 'assistant',
-          content: "You didn't stay eleven years because you were afraid to leave. You stayed because leaving would have cost you something that took a long time to build — not the salary, not the title, but the proof. Proof that you were someone who sticks.\n\nWhat came through most clearly is that the thing you actually want has been sitting in a drawer for three years, written out twice, shown to no one. That's not procrastination. That's a very specific kind of courage withheld — because inside your current job, failure has a buffer. If something goes wrong, there's a structure to absorb it. What you're really afraid of isn't failure. It's failure with your name on it and nothing else to point to.\n\nThe harder thing to name is this: you built your identity in opposition to your father. Staying became proof. But the consulting practice has been in that drawer partly because if it fails, you can't use staying as the evidence anymore. The escape from one fear quietly became the entrance to another.\n\nI am not my father's story. I have already proved that — eleven years is proof enough. What I haven't proved yet is what I can build when the only thing standing behind it is me. That's what the drawer is about. I'm ready to find out. Not because I'm certain, but because staying certain was never actually the goal.\n\nDoes this feel true? Anything you'd want to change or add?"
+          role: "assistant",
+          content: "How long have you been thinking about that?",
+          messageType: "chat",
         },
-        { role: 'user', content: 'Yes, that feels exactly right.' },
         {
-          role: 'assistant',
-          content: "This isn't a plan — plans come later. These are just the first moves.\n\n1. Show the business plan to one person this week.\nNot to get permission — to break the private/public seal that has kept this in a drawer for three years.\n\n2. Write down what failure actually looks like.\nNot the vague fear of it. The specific thing. Most people discover the actual answer is survivable.\n\n3. Set a date — not to launch, but to decide.\nPick a date three months from now by which you will have made a decision. Decisions have a different gravity than intentions.\n\nDo these feel right? You can adjust any of them, swap one out, or tell me one of these won't work and why."
+          role: "user",
+          content: "About seven years. The money is good but I dread Mondays.",
         },
-        { role: 'user', content: 'These feel right.' },
+        { role: "assistant", content: "What would leaving feel like?", messageType: "chat" },
+        {
+          role: "user",
+          content:
+            "Relief. But also guilt — like throwing away something that took a long time to build.",
+        },
+        { role: "assistant", content: "What did you build there?", messageType: "chat" },
+        {
+          role: "user",
+          content:
+            "Security. And proof. Proof I could stick with something. My father never held a job for more than two years.",
+        },
+        {
+          role: "assistant",
+          content: "I think I have enough to tell your story. Ready to see it?",
+          messageType: "chat",
+        },
+        { role: "user", content: "Yes." },
+        {
+          role: "assistant",
+          messageType: "synthesis",
+          content:
+            "You didn't stay eleven years because you were afraid to leave. You stayed because leaving would have cost you something that took a long time to build — not the salary, not the title, but the proof. Proof that you were someone who sticks.\n\nWhat came through most clearly is that the thing you actually want has been sitting in a drawer for three years, written out twice, shown to no one. That's not procrastination. That's a very specific kind of courage withheld — because inside your current job, failure has a buffer. If something goes wrong, there's a structure to absorb it. What you're really afraid of isn't failure. It's failure with your name on it and nothing else to point to.\n\nThe harder thing to name is this: you built your identity in opposition to your father. Staying became proof. But the consulting practice has been in that drawer partly because if it fails, you can't use staying as the evidence anymore. The escape from one fear quietly became the entrance to another.\n\nI am not my father's story. I have already proved that — eleven years is proof enough. What I haven't proved yet is what I can build when the only thing standing behind it is me. That's what the drawer is about. I'm ready to find out. Not because I'm certain, but because staying certain was never actually the goal.\n\nDoes this feel true? Anything you'd want to change or add?",
+        },
+        { role: "user", content: "Yes, that feels exactly right." },
+        {
+          role: "assistant",
+          messageType: "next-chapter",
+          content:
+            "This isn't a plan — plans come later. These are just the first moves.\n\n1. Show the business plan to one person this week.\nNot to get permission — to break the private/public seal that has kept this in a drawer for three years.\n\n2. Write down what failure actually looks like.\nNot the vague fear of it. The specific thing. Most people discover the actual answer is survivable.\n\n3. Set a date — not to launch, but to decide.\nPick a date three months from now by which you will have made a decision. Decisions have a different gravity than intentions.\n\nDo these feel right? You can adjust any of them, swap one out, or tell me one of these won't work and why.",
+        },
+        { role: "user", content: "These feel right." },
       ];
 
       const FIXTURE_SESSION_STATE = {
@@ -307,17 +366,10 @@
       ];
 
       // Classify an assistant message as 'synthesis', 'next-chapter', or null.
-      // visibleMsgs is the filtered (non-hidden) messages array.
-      function classifyMsg(msg, index, visibleMsgs) {
-        if (msg.role !== 'assistant') return null;
-        const content = msg.content.trim();
-        // Synthesis: long second-person narrative
-        if (content.length > 400 && content.startsWith('You ')) return 'synthesis';
-        // Next Chapter: follows a synthesis message and contains numbered actions
-        const hasPrecedingSynthesis = visibleMsgs
-          .slice(0, index)
-          .some(m => m.role === 'assistant' && m.content.trim().length > 400 && m.content.trim().startsWith('You '));
-        if (hasPrecedingSynthesis && /\n\s*\d+\./.test(content)) return 'next-chapter';
+      function classifyMsg(msg) {
+        if (msg.role !== "assistant") return null;
+        if (msg.messageType === "synthesis") return "synthesis";
+        if (msg.messageType === "next-chapter") return "next-chapter";
         return null;
       }
 
@@ -332,7 +384,9 @@
       }
 
       function App() {
-        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(
+          navigator.userAgent,
+        );
 
         const [messages, setMessages] = useState([]);
         const [input, setInput] = useState("");
@@ -378,7 +432,7 @@
         const [receiveMode, setReceiveMode] = useState(false);
         const receiveModeRef = useRef(false);
         const silenceTimerRef = useRef(null);
-        const accumulatedTranscriptRef = useRef('');
+        const accumulatedTranscriptRef = useRef("");
         const handsFreeRef = useRef(false);
         const recognitionRef = useRef(null);
         const sendMessageRef = useRef(null);
@@ -388,8 +442,10 @@
         const inputRef = useRef(null);
 
         const [sessionState, setSessionState] = useState({
-          storyConfirmed: false, chapterConfirmed: false,
-          hasNarrative: false, hasNextChapter: false,
+          storyConfirmed: false,
+          chapterConfirmed: false,
+          hasNarrative: false,
+          hasNextChapter: false,
         });
 
         const [debugLog, setDebugLog] = useState([]);
@@ -397,7 +453,7 @@
         const dbg = debugMode
           ? (msg) => {
               const ts = new Date().toTimeString().slice(0, 8);
-              setDebugLog(prev => [`${ts} ${msg}`, ...prev].slice(0, 20));
+              setDebugLog((prev) => [`${ts} ${msg}`, ...prev].slice(0, 20));
             }
           : () => {};
 
@@ -410,18 +466,21 @@
         }, [loading]);
 
         useEffect(() => {
-          setSpeechSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
+          setSpeechSupported(
+            !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+          );
         }, []);
 
         useEffect(() => {
           setSynthSupported(!!window.speechSynthesis);
         }, []);
 
-
         // On mount: load welcome text and initialise the conversation.
         useEffect(() => {
           const init = async () => {
-            dbg(`App mounted, SR:${!!(window.SpeechRecognition||window.webkitSpeechRecognition)} SS:${!!window.speechSynthesis}`);
+            dbg(
+              `App mounted, SR:${!!(window.SpeechRecognition || window.webkitSpeechRecognition)} SS:${!!window.speechSynthesis}`,
+            );
             let welcomeText = "Welcome! What would you like to work on?";
             try {
               const r = await fetch(`${BASE}/welcome`);
@@ -484,10 +543,10 @@
             if (!res.ok) throw new Error(data.error);
             setMessages((prev) => [
               ...prev,
-              { role: "assistant", content: data.reply },
+              { role: "assistant", content: data.reply, messageType: data.messageType ?? 'chat' },
             ]);
             if (shouldSpeak && synthSupported) {
-              speakWithOpenAI(data.reply)
+              speakWithOpenAI(data.reply);
             }
           } catch (err) {
             console.error("Start conversation error:", err);
@@ -581,16 +640,22 @@
                 }),
               });
               const data = await res.json();
+              console.log(
+                "reply start:",
+                JSON.stringify(data.reply.slice(0, 30)),
+              );
               if (!res.ok) throw new Error(data.error);
-              dbg(`Response received, voiceMode:${wasVoiceMode} synth:${synthSupported} len:${data.reply.length}`);
-              setMessages((prev) => [
-                ...prev,
-                { role: "assistant", content: data.reply },
-              ]);
-              setTimeout(() => fetchSessionState(), 500);
+              dbg(
+                `Response received, voiceMode:${wasVoiceMode} synth:${synthSupported} len:${data.reply.length}`,
+              );
               if (wasVoiceMode && synthSupported) {
                 speakWithOpenAI(data.reply);
               }
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: data.reply, messageType: data.messageType ?? 'chat' },
+              ]);
+              setTimeout(() => fetchSessionState(), 500);
             } catch (err) {
               dbg(`ERROR: ${err.message}`);
               console.error(err);
@@ -637,24 +702,24 @@
 
         const injectFixture = async () => {
           try {
-            await fetch('/seed-fixture-session', { method: 'POST' });
+            await fetch("/seed-fixture-session", { method: "POST" });
           } catch (err) {
-            console.error('Failed to seed fixture session:', err);
+            console.error("Failed to seed fixture session:", err);
           }
           setMessages(FIXTURE_MESSAGES);
-          setSessionId('fixture-test-session');
+          setSessionId("fixture-test-session");
           setAwaitingName(false);
           setSessionState(FIXTURE_SESSION_STATE);
         };
 
         const injectFixtureChapter = async () => {
           try {
-            await fetch('/seed-fixture-chapter', { method: 'POST' });
+            await fetch("/seed-fixture-chapter", { method: "POST" });
           } catch (err) {
-            console.error('Failed to seed fixture session:', err);
+            console.error("Failed to seed fixture session:", err);
           }
           setMessages(FIXTURE_MESSAGES_CHAPTER);
-          setSessionId('fixture-test-session');
+          setSessionId("fixture-test-session");
           setAwaitingName(false);
           setSessionState(FIXTURE_SESSION_STATE_CHAPTER);
         };
@@ -685,12 +750,14 @@
             silenceTimerRef.current = null;
           }
           if (recognitionRef.current) {
-            try { recognitionRef.current.stop(); } catch (_) {}
+            try {
+              recognitionRef.current.stop();
+            } catch (_) {}
             recognitionRef.current = null;
           }
           if (!leaveAccumulated) {
-            accumulatedTranscriptRef.current = '';
-            setInput('');
+            accumulatedTranscriptRef.current = "";
+            setInput("");
           }
         };
 
@@ -699,12 +766,12 @@
           if (!SR) return;
           if (receiveModeRef.current) return;
 
-          dbg('startReceiveMode called');
+          dbg("startReceiveMode called");
           receiveModeRef.current = true;
           setVoiceMode(true);
           setReceiveMode(true);
-          accumulatedTranscriptRef.current = '';
-          setInput('');
+          accumulatedTranscriptRef.current = "";
+          setInput("");
 
           const recognition = new SR();
           recognition.continuous = true;
@@ -712,15 +779,22 @@
           recognitionRef.current = recognition;
 
           recognition.onresult = (event) => {
-            const transcript = event.results[event.results.length - 1][0].transcript;
+            const transcript =
+              event.results[event.results.length - 1][0].transcript;
             dbg(`Result received: ${transcript.slice(0, 30)}`);
-            accumulatedTranscriptRef.current += (accumulatedTranscriptRef.current ? ' ' : '') + transcript;
+            accumulatedTranscriptRef.current +=
+              (accumulatedTranscriptRef.current ? " " : "") + transcript;
             setInput(accumulatedTranscriptRef.current);
 
             if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = setTimeout(() => {
-              if (receiveModeRef.current && accumulatedTranscriptRef.current.trim()) {
-                dbg(`Silence timer fired: ${accumulatedTranscriptRef.current.slice(0, 30)}`);
+              if (
+                receiveModeRef.current &&
+                accumulatedTranscriptRef.current.trim()
+              ) {
+                dbg(
+                  `Silence timer fired: ${accumulatedTranscriptRef.current.slice(0, 30)}`,
+                );
                 voiceModeRef.current = true;
                 setVoiceMode(true);
                 handsFreeRef.current = true;
@@ -734,42 +808,47 @@
           recognition.onend = () => {
             // Auto-restart if still in receive mode (recognition stops after silence)
             if (receiveModeRef.current) {
-              try { recognition.start(); } catch (_) {}
+              try {
+                recognition.start();
+              } catch (_) {}
             }
           };
 
           recognition.onerror = (err) => {
             dbg(`SR onerror: ${err.error}`);
-            if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
+            if (
+              err.error === "not-allowed" ||
+              err.error === "service-not-allowed"
+            ) {
               receiveModeRef.current = false;
               setReceiveMode(false);
             }
           };
 
-          dbg('Recognition started');
+          dbg("Recognition started");
           recognition.start();
         };
 
         const speakWithOpenAI = async (fullText) => {
-          dbg('TTS request sent');
+          dbg("TTS request sent");
           try {
             const response = await fetch(`${BASE}/api/tts`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ text: fullText }),
             });
             if (!response.ok) throw new Error(`TTS HTTP ${response.status}`);
-            dbg('TTS audio received');
+            dbg("TTS audio received");
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const audio = new Audio(url);
             currentAudioRef.current = audio;
             audio.onplay = () => {
-              dbg('TTS playback started');
+              dbg("TTS playback started");
               setIsSpeaking(true);
             };
             audio.onended = () => {
-              dbg('TTS playback ended');
+              dbg("TTS playback ended");
               URL.revokeObjectURL(url);
               currentAudioRef.current = null;
               setIsSpeaking(false);
@@ -779,7 +858,7 @@
               }
             };
             audio.onerror = () => {
-              dbg('TTS audio error, falling back to SS');
+              dbg("TTS audio error, falling back to SS");
               URL.revokeObjectURL(url);
               currentAudioRef.current = null;
               setIsSpeaking(false);
@@ -788,7 +867,7 @@
             audio.play();
           } catch (err) {
             dbg(`TTS failed (falling back to SS): ${err.message}`);
-            console.error('OpenAI TTS error:', err);
+            console.error("OpenAI TTS error:", err);
             speakResponse(fullText, null);
           }
         };
@@ -812,8 +891,9 @@
               .replace(/`([^`]+)`/g, "$1")
               .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
 
-          const raw =
-            fullText.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || [fullText];
+          const raw = fullText.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || [
+            fullText,
+          ];
           const sentences = raw.map((s) => s.trim()).filter(Boolean);
 
           const speechId = Date.now();
@@ -829,8 +909,8 @@
               builtText += (builtText ? " " : "") + sentence;
               setMessages((prev) =>
                 prev.map((m) =>
-                  m._id === msgId ? { ...m, content: builtText } : m
-                )
+                  m._id === msgId ? { ...m, content: builtText } : m,
+                ),
               );
               setIsSpeaking(true);
             };
@@ -845,8 +925,8 @@
                 setIsSpeaking(false);
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m._id === msgId ? { ...m, content: fullText } : m
-                  )
+                    m._id === msgId ? { ...m, content: fullText } : m,
+                  ),
                 );
                 return;
               }
@@ -855,8 +935,8 @@
                 setIsSpeaking(false);
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m._id === msgId ? { ...m, content: fullText } : m
-                  )
+                    m._id === msgId ? { ...m, content: fullText } : m,
+                  ),
                 );
                 if (handsFreeRef.current) {
                   dbg(`SS onend last sentence, resuming receive`);
@@ -875,8 +955,8 @@
               setIsSpeaking(false);
               setMessages((prev) =>
                 prev.map((m) =>
-                  m._id === msgId ? { ...m, content: fullText } : m
-                )
+                  m._id === msgId ? { ...m, content: fullText } : m,
+                ),
               );
             };
 
@@ -889,14 +969,14 @@
         // (startReceiveMode is triggered automatically via useEffect instead).
         const initializeSession = () => {
           if (window.speechSynthesis) {
-            const u = new SpeechSynthesisUtterance('a');
+            const u = new SpeechSynthesisUtterance("a");
             u.volume = 0;
             u.rate = 10;
             window.speechSynthesis.speak(u);
           }
-          dbg('initializeSession called');
+          dbg("initializeSession called");
           setVoiceStarted(true);
-          const utterance = new SpeechSynthesisUtterance('');
+          const utterance = new SpeechSynthesisUtterance("");
           window.speechSynthesis.speak(utterance);
         };
 
@@ -922,7 +1002,7 @@
             // On mobile voiceStarted is false until overlay tap; on desktop
             // desktopUnlocked is false until the first mic click.
             if ((!voiceStarted || !desktopUnlocked) && window.speechSynthesis) {
-              const u = new SpeechSynthesisUtterance('a');
+              const u = new SpeechSynthesisUtterance("a");
               u.volume = 0;
               u.rate = 10;
               window.speechSynthesis.speak(u);
@@ -935,16 +1015,22 @@
 
         useEffect(() => {
           const onVisible = () => {
-            if (document.visibilityState === 'visible' && receiveModeRef.current) {
+            if (
+              document.visibilityState === "visible" &&
+              receiveModeRef.current
+            ) {
               // Recognition was likely killed by the browser when the tab was hidden;
               // restart it now that we're visible again.
               if (recognitionRef.current) {
-                try { recognitionRef.current.start(); } catch (_) {}
+                try {
+                  recognitionRef.current.start();
+                } catch (_) {}
               }
             }
           };
-          document.addEventListener('visibilitychange', onVisible);
-          return () => document.removeEventListener('visibilitychange', onVisible);
+          document.addEventListener("visibilitychange", onVisible);
+          return () =>
+            document.removeEventListener("visibilitychange", onVisible);
         }, []);
 
         const handleKeyDown = (e) => {
@@ -1013,50 +1099,85 @@
 
             <div id="messages">
               {(() => {
-                const visible = messages.filter(m => !m.hidden);
+                const visible = messages.filter((m) => !m.hidden);
                 const lastNextChapterIdx = visible.reduce(
-                  (last, m, i) => classifyMsg(m, i, visible) === 'next-chapter' ? i : last, -1
+                  (last, m, i) =>
+                    classifyMsg(m) === "next-chapter" ? i : last,
+                  -1,
                 );
                 return visible.map((msg, i) => {
-                  const type = classifyMsg(msg, i, visible);
-                  if (type === 'synthesis') {
-                    const paragraphs = msg.content.split('\n\n');
-                    const closeIdx = paragraphs.findIndex(p => /^I[' \w]/.test(p.trimStart()));
-                    const beforeParas = closeIdx >= 0 ? paragraphs.slice(0, closeIdx) : paragraphs;
-                    const closePara  = closeIdx >= 0 ? paragraphs[closeIdx] : null;
-                    const afterParas = closeIdx >= 0 ? paragraphs.slice(closeIdx + 1) : [];
+                  const type = classifyMsg(msg);
+                  if (type === "synthesis") {
+                    const paragraphs = msg.content.split("\n\n");
+                    const closeIdx = paragraphs.findIndex((p) =>
+                      /^I[' \w]/.test(p.trimStart()),
+                    );
+                    const beforeParas =
+                      closeIdx >= 0
+                        ? paragraphs.slice(0, closeIdx)
+                        : paragraphs;
+                    const closePara =
+                      closeIdx >= 0 ? paragraphs[closeIdx] : null;
+                    const afterParas =
+                      closeIdx >= 0 ? paragraphs.slice(closeIdx + 1) : [];
                     return (
                       <div key={i} className="narrative-card">
-                        <div className="narrative-card-header">My Success Story</div>
+                        <div className="narrative-card-header">
+                          My Success Story
+                        </div>
                         {beforeParas.map((p, pi) => (
-                          <p key={pi} style={{ margin: '0 0 14px 0' }}>{p}</p>
+                          <p key={pi} style={{ margin: "0 0 14px 0" }}>
+                            {p}
+                          </p>
                         ))}
                         {closePara && (
-                          <div style={{ borderTop: '1px solid #d4c5a9', marginTop: '20px', paddingTop: '20px', fontStyle: 'italic' }}>
-                            {'\u201c'}{closePara}{'\u201d'}
+                          <div
+                            style={{
+                              borderTop: "1px solid #d4c5a9",
+                              marginTop: "20px",
+                              paddingTop: "20px",
+                              fontStyle: "italic",
+                            }}
+                          >
+                            {"\u201c"}
+                            {closePara}
+                            {"\u201d"}
                           </div>
                         )}
                         {afterParas.map((p, pi) => (
-                          <p key={`after-${pi}`} style={{ margin: '14px 0 0 0' }}>{p}</p>
+                          <p
+                            key={`after-${pi}`}
+                            style={{ margin: "14px 0 0 0" }}
+                          >
+                            {p}
+                          </p>
                         ))}
                       </div>
                     );
                   }
-                  if (type === 'next-chapter') {
+                  if (type === "next-chapter") {
                     return (
                       <div key={i}>
                         <div className="narrative-card">
-                          <div className="narrative-card-header">My Next Chapter</div>
+                          <div className="narrative-card-header">
+                            My Next Chapter
+                          </div>
                           {msg.content}
                         </div>
-                        {i === lastNextChapterIdx && sessionState.chapterConfirmed && (
-                          <button
-                            className="download-btn"
-                            onClick={() => window.open(`${BASE}/getpdf/${sessionId}`, '_blank')}
-                          >
-                            Download My Story (PDF)
-                          </button>
-                        )}
+                        {i === lastNextChapterIdx &&
+                          sessionState.chapterConfirmed && (
+                            <button
+                              className="download-btn"
+                              onClick={() =>
+                                window.open(
+                                  `${BASE}/getpdf/${sessionId}`,
+                                  "_blank",
+                                )
+                              }
+                            >
+                              Download My Story (PDF)
+                            </button>
+                          )}
                       </div>
                     );
                   }
@@ -1075,48 +1196,84 @@
               <div
                 onClick={initializeSession}
                 style={{
-                  position: "fixed", inset: 0, zIndex: 50,
-                  display: "flex", alignItems: "center", justifyContent: "center",
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 50,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   background: "#0d0d1a",
                   cursor: "pointer",
                   userSelect: "none",
                 }}
               >
                 <div style={{ textAlign: "center", padding: "0 32px" }}>
-                  <h1 style={{
-                    fontSize: "clamp(26px, 6vw, 38px)",
-                    fontWeight: 700,
-                    color: "white",
-                    marginBottom: "20px",
-                    letterSpacing: "-0.5px",
-                  }}>
+                  <h1
+                    style={{
+                      fontSize: "clamp(26px, 6vw, 38px)",
+                      fontWeight: 700,
+                      color: "white",
+                      marginBottom: "20px",
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
                     My Success Story
                   </h1>
-                  <p className="overlay-hint" style={{
-                    fontSize: "16px",
-                    fontWeight: 400,
-                    color: "rgba(255,255,255,0.7)",
-                    margin: 0,
-                  }}>
+                  <p
+                    className="overlay-hint"
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 400,
+                      color: "rgba(255,255,255,0.7)",
+                      margin: 0,
+                    }}
+                  >
                     Tap to begin your session
                   </p>
                 </div>
               </div>
             )}
-            {(receiveMode && !loading && !isSpeaking) && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px 8px", fontSize: "12px", color: "#6c757d" }}>
-                <span style={{ display: "inline-block", width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%", flexShrink: 0 }} />
+            {receiveMode && !loading && !isSpeaking && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "0 20px 8px",
+                  fontSize: "12px",
+                  color: "#6c757d",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "8px",
+                    height: "8px",
+                    background: "#22c55e",
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                  }}
+                />
                 <span>Listening…</span>
               </div>
             )}
             {isSpeaking && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 20px 8px", fontSize: "12px", color: "#6c757d" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "0 20px 8px",
+                  fontSize: "12px",
+                  color: "#6c757d",
+                }}
+              >
                 <span className="speaking-dot" />
                 <span>Speaking…</span>
               </div>
             )}
 
-            {!isMobile && !desktopUnlocked && speechSupported && (
+            {/*!isMobile && !desktopUnlocked && speechSupported && (
               <div style={{
                 textAlign: "center",
                 padding: "0 20px 8px",
@@ -1126,25 +1283,43 @@
               }}>
                 Click the mic button to interact using your voice; otherwise, type in your side of the conversation
               </div>
-            )}
+            )*/}
 
             <footer>
               {speechSupported && (
                 <button
                   onClick={startListening}
                   disabled={loading}
-                  className={receiveMode ? "mic-receiving" : isListening ? "mic-listening" : ""}
+                  className={
+                    receiveMode
+                      ? "mic-receiving"
+                      : isListening
+                        ? "mic-listening"
+                        : ""
+                  }
                   style={{
-                    background: receiveMode ? "#16a34a" : isListening ? "#dc3545" : "#e9ecef",
-                    color: (receiveMode || isListening) ? "white" : "#495057",
+                    background: receiveMode
+                      ? "#16a34a"
+                      : isListening
+                        ? "#dc3545"
+                        : "#e9ecef",
+                    color: receiveMode || isListening ? "white" : "#495057",
                     flexShrink: 0,
                     padding: "10px 12px",
                   }}
-                  aria-label={receiveMode ? "Stop listening" : "Start voice conversation"}
+                  aria-label={
+                    receiveMode ? "Stop listening" : "Start voice conversation"
+                  }
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/>
-                    <path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-2.08A7 7 0 0 0 19 11z"/>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+                    <path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-2.08A7 7 0 0 0 19 11z" />
                   </svg>
                 </button>
               )}
@@ -1195,42 +1370,79 @@
             </footer>
 
             {debugMode && (
-              <div style={{
-                position: "fixed", bottom: 0, right: 0, zIndex: 200,
-                display: "flex", flexDirection: "column", alignItems: "flex-end",
-              }}>
+              <div
+                style={{
+                  position: "fixed",
+                  bottom: 0,
+                  right: 0,
+                  zIndex: 200,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                }}
+              >
                 <button
                   onClick={injectFixture}
                   style={{
-                    background: "#f59e0b", color: "#1c1c1c", border: "none",
-                    borderRadius: "6px", padding: "8px 16px",
-                    fontSize: "0.85rem", cursor: "pointer", margin: "8px 0",
+                    background: "#f59e0b",
+                    color: "#1c1c1c",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    margin: "8px 0",
                   }}
-                >Inject Test Conversation</button>
+                >
+                  Inject Test Conversation
+                </button>
                 <button
                   onClick={injectFixtureChapter}
                   style={{
-                    background: "#f59e0b", color: "#1c1c1c", border: "none",
-                    borderRadius: "6px", padding: "8px 16px",
-                    fontSize: "0.85rem", cursor: "pointer", margin: "8px 0",
+                    background: "#f59e0b",
+                    color: "#1c1c1c",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    margin: "8px 0",
                   }}
-                >Test Chapter Adjustment</button>
+                >
+                  Test Chapter Adjustment
+                </button>
                 <button
-                  onClick={() => setDebugOpen(o => !o)}
+                  onClick={() => setDebugOpen((o) => !o)}
                   style={{
-                    background: "#111", color: "#0f0", border: "none",
-                    fontFamily: "monospace", fontSize: "10px",
-                    padding: "3px 8px", cursor: "pointer", opacity: 0.85,
+                    background: "#111",
+                    color: "#0f0",
+                    border: "none",
+                    fontFamily: "monospace",
+                    fontSize: "10px",
+                    padding: "3px 8px",
+                    cursor: "pointer",
+                    opacity: 0.85,
                   }}
-                >{debugOpen ? "▼ DEBUG" : "▲ DEBUG"}</button>
+                >
+                  {debugOpen ? "▼ DEBUG" : "▲ DEBUG"}
+                </button>
                 {debugOpen && (
-                  <div style={{
-                    width: "min(340px, 96vw)", maxHeight: "40vh", overflowY: "auto",
-                    background: "rgba(0,0,0,0.9)", color: "#0f0",
-                    fontFamily: "monospace", fontSize: "11px",
-                    padding: "6px 8px", lineHeight: 1.5,
-                  }}>
-                    {debugLog.length === 0 && <div style={{color:"#666"}}>no events yet</div>}
+                  <div
+                    style={{
+                      width: "min(340px, 96vw)",
+                      maxHeight: "40vh",
+                      overflowY: "auto",
+                      background: "rgba(0,0,0,0.9)",
+                      color: "#0f0",
+                      fontFamily: "monospace",
+                      fontSize: "11px",
+                      padding: "6px 8px",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {debugLog.length === 0 && (
+                      <div style={{ color: "#666" }}>no events yet</div>
+                    )}
                     {debugLog.map((entry, i) => (
                       <div key={i}>{entry}</div>
                     ))}
@@ -1245,13 +1457,16 @@
       ReactDOM.createRoot(document.getElementById("root")).render(<App />);
     </script>
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          const isMobile = /android|iphone|ipad|ipod/i.test(
+            navigator.userAgent,
+          );
           if (!isMobile) return;
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('[SW] Registered:', reg.scope))
-            .catch(err => console.error('[SW] Failed:', err));
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((reg) => console.log("[SW] Registered:", reg.scope))
+            .catch((err) => console.error("[SW] Failed:", err));
         });
       }
     </script>
