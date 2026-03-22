@@ -47,7 +47,9 @@ app.get("/sw.js", (_req, res) => res.sendFile(join(__dirname, "sw.js")));
 app.get("/manifest.json", (_req, res) =>
   res.sendFile(join(__dirname, "public/manifest.json")),
 );
-
+app.get("/admin.html", (_req, res) =>
+  res.sendFile(join(__dirname, "admin.html")),
+);
 app.use("/icons", express.static(join(__dirname, "public/icons")));
 app.use(express.static(join(__dirname, "public")));
 
