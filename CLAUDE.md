@@ -151,6 +151,10 @@ Remaining candidates (in order):
 
 ### 2026-03-22
 - Restructured CLAUDE.md — split into CLAUDE.md (working context) and CLAUDE-history.md (archive)
+- Extracted InputBar component into `src/components/InputBar.jsx`
+- Extracted ChatMessage component into `src/components/ChatMessage.jsx`
+- Extracted StatusBar component into `src/components/StatusBar.jsx`
+- Extracted TestModeBar component into `src/components/TestModeBar.jsx`
 - Fixed: VoiceOverlay extraction had dropped `startReceiveMode()` call from `initializeSession()`; restored
 - Extracted VoiceOverlay component into `src/components/VoiceOverlay.jsx`
 - Extracted NextChapterCard component into `src/components/NextChapterCard.jsx`

@@ -4,6 +4,10 @@ import DebugOverlay from './components/DebugOverlay';
 import NarrativeCard from './components/NarrativeCard';
 import NextChapterCard from './components/NextChapterCard';
 import VoiceOverlay from './components/VoiceOverlay';
+import StatusBar from './components/StatusBar';
+import TestModeBar from './components/TestModeBar';
+import ChatMessage from './components/ChatMessage';
+import InputBar from './components/InputBar';
 
 const BASE = window.location.origin;
 const isTestMode =
@@ -766,53 +770,46 @@ function App() {
     }
   };
 
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    if (receiveModeRef.current) {
+      handsFreeRef.current = false;
+      stopReceiveMode(true);
+    }
+    if (voiceModeRef.current) {
+      voiceModeRef.current = false;
+      setVoiceMode(false);
+    }
+    if (isSpeaking) {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+        setIsSpeaking(false);
+      } else {
+        pendingStopRef.current = true;
+      }
+    }
+  };
+
+  const handleSendClick = () => {
+    if (receiveModeRef.current) {
+      voiceModeRef.current = true;
+      setVoiceMode(true);
+      handsFreeRef.current = true;
+      stopReceiveMode(true);
+    }
+    sendMessage(input);
+  };
+
   return (
     <>
-      {isTestMode && (
-        <div
-          style={{
-            background: "#1a1a2e",
-            color: "#00ff88",
-            padding: "6px 16px",
-            fontSize: "12px",
-            fontFamily: "monospace",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            borderBottom: "2px solid #00ff88",
-            flexShrink: 0,
-          }}
-        >
-          <span>⚡ TEST MODE</span>
-          <button
-            onClick={runFloodTest}
-            disabled={isFlooding}
-            style={{
-              background: isFlooding ? "#333" : "#00ff88",
-              color: "#1a1a2e",
-              border: "none",
-              borderRadius: "4px",
-              padding: "4px 12px",
-              fontSize: "11px",
-              fontFamily: "monospace",
-              fontWeight: "bold",
-              cursor: isFlooding ? "not-allowed" : "pointer",
-            }}
-          >
-            {isFlooding
-              ? `Flooding… (${floodIndex}/${FLOOD_SCRIPT.length})`
-              : "Run Flood Test"}
-          </button>
-          {!isFlooding && floodIndex > 0 && (
-            <span style={{ color: "#aaa" }}>
-              ✓ Complete — {FLOOD_SCRIPT.length} messages sent
-            </span>
-          )}
-          <span style={{ marginLeft: "auto", color: "#666" }}>
-            Never visible in production
-          </span>
-        </div>
-      )}
+      <TestModeBar
+        isTestMode={isTestMode}
+        isFlooding={isFlooding}
+        floodIndex={floodIndex}
+        floodScriptLength={FLOOD_SCRIPT.length}
+        runFloodTest={runFloodTest}
+      />
       <header>
         <h1>My Success Story</h1>
       </header>
@@ -841,11 +838,7 @@ function App() {
                 />
               );
             }
-            return (
-              <div key={i} className={`message ${msg.role}`}>
-                {msg.content}
-              </div>
-            );
+            return <ChatMessage key={i} role={msg.role} content={msg.content} />;
           });
         })()}
         {loading && <div className="typing">Thinking...</div>}
@@ -853,45 +846,7 @@ function App() {
       </div>
 
       <VoiceOverlay voiceStarted={voiceStarted} onTap={initializeSession} />
-      {receiveMode && !loading && !isSpeaking && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "0 20px 8px",
-            fontSize: "12px",
-            color: "#6c757d",
-          }}
-        >
-          <span
-            style={{
-              display: "inline-block",
-              width: "8px",
-              height: "8px",
-              background: "#22c55e",
-              borderRadius: "50%",
-              flexShrink: 0,
-            }}
-          />
-          <span>Listening…</span>
-        </div>
-      )}
-      {isSpeaking && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "0 20px 8px",
-            fontSize: "12px",
-            color: "#6c757d",
-          }}
-        >
-          <span className="speaking-dot" />
-          <span>Speaking…</span>
-        </div>
-      )}
+      <StatusBar receiveMode={receiveMode} loading={loading} isSpeaking={isSpeaking} />
 
       {/*!isMobile && !desktopUnlocked && speechSupported && (
         <div style={{
@@ -905,89 +860,19 @@ function App() {
         </div>
       )*/}
 
-      <footer>
-        {speechSupported && (
-          <button
-            onClick={startListening}
-            disabled={loading}
-            className={
-              receiveMode
-                ? "mic-receiving"
-                : isListening
-                  ? "mic-listening"
-                  : ""
-            }
-            style={{
-              background: receiveMode
-                ? "#16a34a"
-                : isListening
-                  ? "#dc3545"
-                  : "#e9ecef",
-              color: receiveMode || isListening ? "white" : "#495057",
-              flexShrink: 0,
-              padding: "10px 12px",
-            }}
-            aria-label={
-              receiveMode ? "Stop listening" : "Start voice conversation"
-            }
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
-              <path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-2.08A7 7 0 0 0 19 11z" />
-            </svg>
-          </button>
-        )}
-        <textarea
-          ref={inputRef}
-          rows="2"
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            if (receiveModeRef.current) {
-              handsFreeRef.current = false;
-              stopReceiveMode(true);
-            }
-            if (voiceModeRef.current) {
-              voiceModeRef.current = false;
-              setVoiceMode(false);
-            }
-            if (isSpeaking) {
-              if (currentAudioRef.current) {
-                currentAudioRef.current.pause();
-                currentAudioRef.current = null;
-                setIsSpeaking(false);
-              } else {
-                pendingStopRef.current = true;
-              }
-            }
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            awaitingName ? "Enter your name..." : "Type your message..."
-          }
-          disabled={loading}
-        />
-        <button
-          onClick={() => {
-            if (receiveModeRef.current) {
-              voiceModeRef.current = true;
-              setVoiceMode(true);
-              handsFreeRef.current = true;
-              stopReceiveMode(true);
-            }
-            sendMessage(input);
-          }}
-          disabled={loading || !input.trim()}
-        >
-          Send
-        </button>
-      </footer>
+      <InputBar
+        speechSupported={speechSupported}
+        receiveMode={receiveMode}
+        isListening={isListening}
+        loading={loading}
+        input={input}
+        awaitingName={awaitingName}
+        inputRef={inputRef}
+        onMicClick={startListening}
+        onInputChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onSendClick={handleSendClick}
+      />
 
       <DebugOverlay
         debugOpen={debugOpen}
