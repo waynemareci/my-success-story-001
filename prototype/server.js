@@ -8,6 +8,7 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { generateStoryPdf } from './src/pdf.js';
+import crypto from 'crypto';
 
 console.log(
   "[STARTUP] server.js loaded from:",
@@ -43,6 +44,7 @@ function getMockReply(messageCount) {
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use((await import('cookie-parser')).default());
 app.get("/sw.js", (_req, res) => res.sendFile(join(__dirname, "sw.js")));
 app.get("/manifest.json", (_req, res) =>
   res.sendFile(join(__dirname, "public/manifest.json")),
@@ -74,6 +76,31 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
+
+// ── Admin auth ──────────────────────────────────────────────────────────────
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
+
+function makeAdminToken() {
+  const payload = Date.now().toString();
+  const sig = crypto.createHmac('sha256', ADMIN_TOKEN_SECRET).update(payload).digest('hex');
+  return `${payload}.${sig}`;
+}
+
+function verifyAdminToken(token) {
+  if (!token) return false;
+  const [payload, sig] = token.split('.');
+  if (!payload || !sig) return false;
+  const expected = crypto.createHmac('sha256', ADMIN_TOKEN_SECRET).update(payload).digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+}
+
+function requireAdmin(req, res, next) {
+  const token = req.cookies?.admin_token;
+  if (verifyAdminToken(token)) return next();
+  res.status(401).json({ error: 'Unauthorized' });
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 function formatTimestamp(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -714,7 +741,35 @@ app.get('/getpdf/:sessionId', async (req, res) => {
 });
 
 // GET /admin/sessions — summarize all logged sessions from Supabase
-app.get("/admin/sessions", async (_req, res) => {
+// POST /api/admin-login
+app.post('/api/admin-login', (req, res) => {
+  const { password } = req.body;
+  if (!ADMIN_PASSWORD || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+  const token = makeAdminToken();
+  res.cookie('admin_token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+  });
+  res.json({ ok: true });
+});
+
+// POST /api/admin-logout
+app.post('/api/admin-logout', (_req, res) => {
+  res.clearCookie('admin_token');
+  res.json({ ok: true });
+});
+
+// GET /api/admin-check
+app.get('/api/admin-check', (req, res) => {
+  const token = req.cookies?.admin_token;
+  res.json({ authenticated: verifyAdminToken(token) });
+});
+
+app.get("/admin/sessions", requireAdmin, async (_req, res) => {
   try {
     const [usersResult] = await Promise.all([
       supabase.from("users").select("session_id, user_identifier"),
@@ -788,7 +843,7 @@ app.get("/admin/sessions", async (_req, res) => {
 });
 
 // GET /admin/transcript/:sessionId — full conversation for one session
-app.get("/admin/transcript/:sessionId", async (req, res) => {
+app.get("/admin/transcript/:sessionId", requireAdmin, async (req, res) => {
   const { sessionId } = req.params;
 
   const [logsResult, userResult] = await Promise.all([
