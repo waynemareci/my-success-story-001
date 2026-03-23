@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import PDFDocument from "pdfkit";
+import { generateStoryPdf } from './src/pdf.js';
 
 console.log(
   "[STARTUP] server.js loaded from:",
@@ -700,136 +700,17 @@ app.get("/session/:sessionId", async (req, res) => {
 });
 
 // GET /getpdf/:sessionId — generate and stream a PDF of the story + Next Chapter
-app.get("/getpdf/:sessionId", async (req, res) => {
+app.get('/getpdf/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
   const session = await getSession(sessionId);
-  res.set("Cache-Control", "no-store");
-  res.set("Pragma", "no-cache");
+  res.set('Cache-Control', 'no-store');
+  res.set('Pragma', 'no-cache');
 
   if (!session.confirmedNarrative) {
-    return res
-      .status(404)
-      .json({ error: "No confirmed story found for this session" });
+    return res.status(404).json({ error: 'No confirmed story found for this session' });
   }
 
-  const doc = new PDFDocument({ margin: 72, size: "LETTER" });
-
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    'attachment; filename="my-success-story.pdf"',
-  );
-  doc.pipe(res);
-
-  // ── Page 1: My Story ─────────────────────────────────────────────────
-
-  if (session.firstName) {
-    doc
-      .fontSize(28)
-      .fillColor("#2c2416")
-      .font("Times-Roman")
-      .text(`${session.firstName}'s Success Story`, {
-        align: "center",
-      })
-      .moveDown(0.5);
-
-    doc
-      .moveTo(72, doc.y)
-      .lineTo(540, doc.y)
-      .strokeColor("#d4c5a9")
-      .stroke()
-      .moveDown(1.5);
-  }
-
-  doc
-    .fontSize(9)
-    .fillColor("#8b7355")
-    .font("Helvetica")
-    .text("MY SUCCESS STORY", { characterSpacing: 3 })
-    .moveDown(0.5);
-
-  doc
-    .moveTo(72, doc.y)
-    .lineTo(540, doc.y)
-    .strokeColor("#d4c5a9")
-    .stroke()
-    .moveDown(1.5);
-
-  const normalized = session.confirmedNarrative.replace(/\\n/g, "\n");
-  const paragraphs = normalized.split("\n\n");
-  const closeIdx = paragraphs.findIndex((p) => /^I[' \w]/.test(p.trimStart()));
-  const beforeParas =
-    closeIdx >= 0 ? paragraphs.slice(0, closeIdx) : paragraphs;
-  const closePara = closeIdx >= 0 ? paragraphs[closeIdx] : null;
-  const afterParas = closeIdx >= 0 ? paragraphs.slice(closeIdx + 1) : [];
-
-  beforeParas.forEach((p) => {
-    doc
-      .fontSize(12)
-      .fillColor("#2c2416")
-      .font("Times-Roman")
-      .text(p, { lineGap: 6, paragraphGap: 12 });
-  });
-
-  if (closePara) {
-    doc
-      .moveDown(0.5)
-      .moveTo(72, doc.y)
-      .lineTo(540, doc.y)
-      .strokeColor("#d4c5a9")
-      .stroke()
-      .moveDown(0.5);
-    doc
-      .fontSize(12)
-      .fillColor("#2c2416")
-      .font("Times-Italic")
-      .text(`\u201c${closePara}\u201d`, { lineGap: 6, paragraphGap: 12 });
-  }
-
-  afterParas.forEach((p) => {
-    doc
-      .fontSize(12)
-      .fillColor("#2c2416")
-      .font("Times-Roman")
-      .text(p, { lineGap: 6, paragraphGap: 12 });
-  });
-
-  doc.moveDown(2);
-
-  // ── Page 2: My Next Chapter ──────────────────────────────────────────
-
-  if (session.nextChapter) {
-    doc.addPage();
-
-    doc
-      .fontSize(9)
-      .fillColor("#8b7355")
-      .font("Helvetica")
-      .text("MY NEXT CHAPTER", { characterSpacing: 3 })
-      .moveDown(0.5);
-
-    doc
-      .moveTo(72, doc.y)
-      .lineTo(540, doc.y)
-      .strokeColor("#d4c5a9")
-      .stroke()
-      .moveDown(1.5);
-
-    doc
-      .fontSize(12)
-      .fillColor("#2c2416")
-      .font("Times-Roman")
-      .text(session.nextChapter, { lineGap: 6, paragraphGap: 12 })
-      .moveDown(3);
-
-    doc
-      .fontSize(9)
-      .fillColor("#8b7355")
-      .font("Helvetica-Oblique")
-      .text("Return when you're ready for Chapter Two.", { align: "center" });
-  }
-
-  doc.end();
+  generateStoryPdf(session, res);
 });
 
 // GET /admin/sessions — summarize all logged sessions from Supabase

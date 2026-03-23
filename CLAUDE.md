@@ -151,6 +151,7 @@ Remaining candidates (in order):
 
 ### 2026-03-22
 - Restructured CLAUDE.md — split into CLAUDE.md (working context) and CLAUDE-history.md (archive)
+- Extracted pdf code from server.js into `src/pdf.js`
 - Extracted InputBar component into `src/components/InputBar.jsx`
 - Extracted ChatMessage component into `src/components/ChatMessage.jsx`
 - Extracted StatusBar component into `src/components/StatusBar.jsx`
