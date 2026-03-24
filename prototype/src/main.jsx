@@ -2,7 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+(window.__ndaChecked || Promise.resolve()).then(() => {
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+});
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

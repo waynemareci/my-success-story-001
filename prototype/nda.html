@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confidentiality Agreement — My Success Story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0b14;
+      --bg2: #13111f;
+      --bg3: #1a1829;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.15);
+      --text: #e8e4f0;
+      --text-muted: #8b86a0;
+      --text-dim: #544f68;
+      --accent: #7c6fff;
+      --accent-glow: rgba(124,111,255,0.25);
+      --accent-hover: #9589ff;
+      --success: #4ade80;
+    }
+
+    html { height: 100%; }
+
+    body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    /* Subtle starfield bg */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.12) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 60%, rgba(255,255,255,0.1) 0%, transparent 100%),
+        radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.08) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.1) 0%, transparent 100%),
+        radial-gradient(200px 200px at 70% 20%, rgba(124,111,255,0.06) 0%, transparent 100%),
+        radial-gradient(300px 300px at 20% 80%, rgba(80,60,200,0.05) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page { position: relative; z-index: 1; width: 100%; max-width: 680px; }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .logo-wrap {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      margin-bottom: 1.25rem;
+    }
+
+    .logo-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,111,255,0.2) 0%, transparent 70%);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+
+    .logo-wrap img {
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .app-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .app-tagline {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .card-header {
+      padding: 1.75rem 2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(124,111,255,0.06) 0%, transparent 60%);
+    }
+
+    .card-header h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 500;
+      margin-bottom: 0.4rem;
+      color: var(--text);
+    }
+
+    .card-header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── NDA scroll box ── */
+    .nda-scroll {
+      margin: 0;
+      padding: 1.5rem 2rem;
+      max-height: 340px;
+      overflow-y: auto;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+      scrollbar-width: thin;
+      scrollbar-color: var(--text-dim) transparent;
+    }
+
+    .nda-scroll::-webkit-scrollbar { width: 4px; }
+    .nda-scroll::-webkit-scrollbar-track { background: transparent; }
+    .nda-scroll::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 2px; }
+
+    .nda-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #c8c4d8;
+    }
+
+    .nda-text h2 {
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin: 1.25rem 0 0.5rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+    }
+
+    .nda-text h2:first-child { margin-top: 0; }
+
+    .nda-text p { margin-bottom: 0.75rem; }
+
+    .nda-text ul {
+      padding-left: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .nda-text ul li { margin-bottom: 0.3rem; }
+
+    .nda-text .parties {
+      background: rgba(124,111,255,0.06);
+      border: 1px solid rgba(124,111,255,0.15);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+    }
+
+    .nda-text .parties strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .nda-text .footnote {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-style: italic;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* Scroll fade hint */
+    .scroll-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      transition: opacity 0.4s;
+    }
+
+    .scroll-hint.hidden { opacity: 0; pointer-events: none; }
+
+    .scroll-hint svg { flex-shrink: 0; animation: bounce 1.5s ease-in-out infinite; }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(3px); }
+    }
+
+    /* ── Form ── */
+    .form-section {
+      padding: 1.75rem 2rem 2rem;
+    }
+
+    .form-section p {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    .field { margin-bottom: 1rem; }
+
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 300;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .field input::placeholder { color: var(--text-dim); }
+
+    .btn {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    .btn:active { transform: scale(0.99); }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .err {
+      margin-top: 0.75rem;
+      font-size: 0.82rem;
+      color: #f87171;
+      min-height: 1.2em;
+      text-align: center;
+    }
+
+    /* ── Success state ── */
+    .success-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 3rem 2rem;
+      gap: 1rem;
+    }
+
+    .success-state.show { display: flex; }
+
+    .success-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(74,222,128,0.12);
+      border: 1px solid rgba(74,222,128,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .success-state h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .success-state p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      max-width: 320px;
+    }
+
+    .redirect-bar {
+      width: 200px;
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+
+    .redirect-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 3s linear;
+      border-radius: 1px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 520px) {
+      body { padding: 2rem 1rem 4rem; }
+      .card-header, .form-section { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .nda-scroll { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="header">
+      <div class="logo-wrap">
+        <img src="/icons/icon-192x192.png" alt="My Success Story">
+      </div>
+      <div class="app-name">My Success Story</div>
+      <div class="app-tagline">Private Preview</div>
+    </div>
+
+    <div class="card" id="main-card">
+
+      <div class="card-header">
+        <h1>Confidentiality Agreement</h1>
+        <p>Please read the agreement below and sign with your name and email to continue. Your acceptance is recorded securely.</p>
+      </div>
+
+      <div class="nda-scroll" id="nda-scroll">
+        <div class="nda-text">
+
+          <h2>Confidentiality Acknowledgment</h2>
+          <p>This Confidentiality Acknowledgment (the "Agreement") is entered into as of the date signed below, between:</p>
+
+          <div class="parties">
+            <p><strong>Disclosing Party:</strong> Wayne Mareci, founder of My Success Story ("mysuccessstory.mareci.com")</p>
+            <p style="margin-bottom:0"><strong>Receiving Party:</strong> The individual identified by signature below</p>
+          </div>
+
+          <h2>1. Purpose</h2>
+          <p>The Disclosing Party wishes to share certain non-public information relating to the My Success Story application, including its concept, methodology, AI prompting approach, product roadmap, and business model (collectively, "Confidential Information"), for the purpose of discussion, evaluation, feedback, or collaboration.</p>
+
+          <h2>2. Confidentiality Obligation</h2>
+          <p>The Receiving Party agrees to:</p>
+          <ul>
+            <li>Hold all Confidential Information in strict confidence;</li>
+            <li>Not disclose Confidential Information to any third party without prior written consent;</li>
+            <li>Use Confidential Information solely for the purpose described above.</li>
+          </ul>
+
+          <h2>3. Exclusions</h2>
+          <p>This Agreement does not apply to information that: (a) is or becomes publicly available through no fault of the Receiving Party; (b) was already known to the Receiving Party before disclosure; or (c) is independently developed by the Receiving Party without use of the Confidential Information.</p>
+
+          <h2>4. Duration</h2>
+          <p>This Agreement is effective from the date of signing and remains in effect for a period of two (2) years.</p>
+
+          <h2>5. Governing Law</h2>
+          <p>This Agreement shall be governed by the laws of the State of New York, without regard to conflict of law principles.</p>
+
+          <p class="footnote">This is a simplified confidentiality acknowledgment intended for informal advisory and evaluation relationships.</p>
+        </div>
+      </div>
+
+      <div class="scroll-hint" id="scroll-hint">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 2v8M3 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Scroll to read full agreement
+      </div>
+
+      <div class="form-section" id="form-section">
+        <p>By entering your name and email below, you confirm you have read and agree to the terms of this Confidentiality Agreement.</p>
+
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" placeholder="Your full name" autocomplete="name">
+        </div>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+
+        <button class="btn" id="sign-btn">I agree and sign</button>
+        <div class="err" id="err"></div>
+      </div>
+
+      <div class="success-state" id="success-state">
+        <div class="success-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h2>Agreement signed</h2>
+        <p>Thank you. You're all set — redirecting you to My Success Story now.</p>
+        <div class="redirect-bar"><div class="redirect-fill" id="redirect-fill"></div></div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      Private preview &mdash; by invitation only
+    </div>
+
+  </div>
+
+  <script>
+    const scroll = document.getElementById('nda-scroll');
+    const hint = document.getElementById('scroll-hint');
+    const btn = document.getElementById('sign-btn');
+    const errEl = document.getElementById('err');
+
+    // Hide scroll hint once user scrolls near bottom
+    scroll.addEventListener('scroll', () => {
+      const nearBottom = scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 40;
+      if (nearBottom) hint.classList.add('hidden');
+    });
+
+    async function sign() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      errEl.textContent = '';
+
+      if (!name) { errEl.textContent = 'Please enter your full name.'; return; }
+      if (!email || !email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Signing…';
+
+      try {
+        const r = await fetch('/api/nda-accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email }),
+        });
+
+        if (!r.ok) {
+          const data = await r.json();
+          errEl.textContent = data.error || 'Something went wrong. Please try again.';
+          btn.disabled = false;
+          btn.textContent = 'I agree and sign';
+          return;
+        }
+
+        // Show success state
+        document.getElementById('form-section').style.display = 'none';
+        document.getElementById('scroll-hint').style.display = 'none';
+        const success = document.getElementById('success-state');
+        success.classList.add('show');
+
+        // Animate redirect bar then redirect
+        requestAnimationFrame(() => {
+          document.getElementById('redirect-fill').style.width = '100%';
+        });
+        setTimeout(() => {
+          window.location.href = 'https://mysuccessstory.mareci.com';
+        }, 3200);
+
+      } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        btn.disabled = false;
+        btn.textContent = 'I agree and sign';
+      }
+    }
+
+    btn.addEventListener('click', sign);
+    document.getElementById('email').addEventListener('keydown', e => {
+      if (e.key === 'Enter') sign();
+    });
+  </script>
+</body>
+</html>

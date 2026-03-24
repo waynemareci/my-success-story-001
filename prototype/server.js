@@ -52,6 +52,9 @@ app.get("/manifest.json", (_req, res) =>
 app.get("/admin.html", (_req, res) =>
   res.sendFile(join(__dirname, "admin.html")),
 );
+app.get("/nda.html", (_req, res) =>
+  res.sendFile(join(__dirname, "nda.html")),
+);
 app.use("/icons", express.static(join(__dirname, "public/icons")));
 app.use(express.static(join(__dirname, "public")));
 
@@ -738,6 +741,47 @@ app.get('/getpdf/:sessionId', async (req, res) => {
   }
 
   generateStoryPdf(session, res);
+});
+
+// POST /api/nda-accept
+app.post('/api/nda-accept', async (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Name and email are required' });
+  }
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const { error } = await supabase.from('nda_acceptances').insert({
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    ip,
+  });
+  if (error) {
+    console.error('[NDA] Supabase insert error:', error.message);
+    return res.status(500).json({ error: 'Failed to record acceptance' });
+  }
+  const token = makeAdminToken();
+  res.cookie('nda_token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+    maxAge: 400 * 24 * 60 * 60 * 1000, // ~13 months
+  });
+  console.log(`[NDA] Accepted by ${name} <${email}> from ${ip}`);
+  res.json({ ok: true });
+});
+
+// GET /api/nda-check
+app.get('/api/nda-check', (req, res) => {
+  const token = req.cookies?.nda_token;
+  const hostname = req.hostname;
+  const bypassed = hostname === 'alpha.mysuccessstory.mareci.com' || hostname === 'localhost';
+  res.json({ authenticated: bypassed || verifyAdminToken(token) });
+});
+
+// POST /api/nda-logout
+app.post('/api/nda-logout', (_req, res) => {
+  res.clearCookie('nda_token');
+  res.json({ ok: true });
 });
 
 // GET /admin/sessions — summarize all logged sessions from Supabase

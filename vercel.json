@@ -9,6 +9,7 @@
         "includeFiles": [
           "prototype/dist/**",
           "prototype/admin.html",
+          "prototype/nda.html",
           "prototype/sw.js",
           "prototype/public/manifest.json",
           "prototype/public/icons/**",

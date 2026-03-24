@@ -5,7 +5,7 @@ A voice-driven web app that guides users through a Socratic goal-discovery
 conversation, then generates a personalised narrative ("My Success Story") and
 action plan ("My Next Chapter"), delivered as a downloadable PDF.
 
-Production URL: successstory.mareci.com  
+Production URL: mysuccessstory.mareci.com  
 Repo: waynemareci/mysuccessstory  
 Stack: React + Vite, Node.js/Express, Vercel (serverless), Supabase, Anthropic API, OpenAI API (TTS)
 
