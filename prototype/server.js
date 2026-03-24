@@ -770,6 +770,7 @@ app.post('/api/nda-accept', async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: 'strict',
+    domain: '.mysuccessstory.mareci.com',
     maxAge: 400 * 24 * 60 * 60 * 1000, // ~13 months
   });
   console.log(`[NDA] Accepted by ${name} <${email}> from ${ip}`);
