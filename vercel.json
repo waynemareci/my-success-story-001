@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "cd prototype && npm install && npm run build",
   "builds": [
     {
       "src": "prototype/server.js",
