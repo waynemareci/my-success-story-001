@@ -3,6 +3,8 @@
     "nodemon": "^3.1.14"
   },
   "scripts": {
-    "vercel-build": "cd prototype && npm install && npm run build"
+    "vercel-build": "cd prototype && npm install && npm run build",
+    "postinstall": "cd prototype && npm install && npm run build"
   }
 }
+
