@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>My Success Story</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#6c3fc5" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Success" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <script type="module" crossorigin src="/assets/index-BVGv-x3K.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DjHzqOss.css">
+  </head>
+  <body>
+    <div id="nda-overlay" style="display:none;position:fixed;inset:0;z-index:9999;
+      background:#0c0b14;font-family:sans-serif;
+      align-items:center;justify-content:center;flex-direction:column;
+      text-align:center;padding:2rem;">
+      <div style="max-width:420px;width:100%;">
+        <img src="/icons/icon-192x192.png" alt="My Success Story"
+             style="width:72px;height:72px;border-radius:16px;margin-bottom:1.25rem;">
+        <div style="font-size:1.5rem;font-weight:500;color:#e8e4f0;
+                    margin-bottom:0.4rem;letter-spacing:0.01em;">
+          My Success Story
+        </div>
+        <div style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;
+                    color:#8b86a0;margin-bottom:2rem;">
+          Private Preview
+        </div>
+        <div style="background:#13111f;border:1px solid rgba(255,255,255,0.08);
+                    border-radius:16px;padding:2rem;">
+          <div style="font-size:1.05rem;color:#e8e4f0;margin-bottom:0.75rem;font-weight:500;">
+            Access requires a confidentiality agreement
+          </div>
+          <div style="font-size:0.875rem;color:#8b86a0;line-height:1.6;margin-bottom:1.75rem;">
+            My Success Story is currently in private preview.
+            To continue, please review and sign a brief confidentiality agreement.
+            This takes about a minute.
+          </div>
+          <a href="https://nda.mysuccessstory.mareci.com/nda.html"
+             style="display:block;width:100%;padding:0.8rem 1rem;
+                    background:#7c6fff;border-radius:8px;color:#fff;
+                    font-size:0.95rem;font-weight:500;text-decoration:none;
+                    letter-spacing:0.02em;box-sizing:border-box;">
+            Review &amp; Sign
+          </a>
+        </div>
+        <div style="margin-top:1.5rem;font-size:0.75rem;color:#544f68;">
+          Private preview &mdash; by invitation only
+        </div>
+      </div>
+    </div>
+    <div id="root" style="display:none"></div>
+    <script>
+      window.__ndaChecked = fetch('/api/nda-check')
+        .then(r => r.json())
+        .then(({ authenticated }) => {
+          if (!authenticated) {
+            document.getElementById('nda-overlay').style.display = 'flex';
+          } else {
+            document.getElementById('root').style.display = 'block';
+          }
+        })
+        .catch(() => {
+          document.getElementById('root').style.display = 'block';
+        });
+    </script>
+  </body>
+</html>
