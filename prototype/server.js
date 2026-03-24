@@ -52,6 +52,12 @@ app.get("/manifest.json", (_req, res) =>
 app.get("/admin.html", (_req, res) =>
   res.sendFile(join(__dirname, "admin.html")),
 );
+app.use((req, res, next) => {
+  if (req.hostname === 'nda.mysuccessstory.mareci.com' && req.path === '/') {
+    return res.sendFile(join(__dirname, "nda.html"));
+  }
+  next();
+});
 app.get("/nda.html", (_req, res) =>
   res.sendFile(join(__dirname, "nda.html")),
 );

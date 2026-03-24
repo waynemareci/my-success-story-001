@@ -21,5 +21,3 @@ Thumbs.db
 
 # Claude Code auto-generated session backup files (CLAUDE000.md, CLAUDE001.md, etc.)
 CLAUDE[0-9]*.md
-
-prototype/dist
